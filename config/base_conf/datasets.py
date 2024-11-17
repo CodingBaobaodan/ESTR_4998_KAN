@@ -57,7 +57,8 @@ Illness_conf = dict(
 # Microsoft Corporation (MSFT)
 MSFT_conf = dict(
     dataset_name='MSFT',
-    var_num=4,                   # OHLCV variables
+    var_num=13,                   
     freq=1440,                    # Daily frequency in minutes
-    data_split=[755, 31, 221],     # Example split: 755 days for training, 221 for testing
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    data_split=[754, 252, 504]
 )

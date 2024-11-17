@@ -20,10 +20,28 @@ class LTSFRunner(L.LightningModule):
         self.register_buffer('mean', torch.tensor(stat['mean']).float())
         self.register_buffer('std', torch.tensor(stat['std']).float())
 
+        # Modified code
+        close_index = 3  # Index of Close price in OHLC
+        mean_close = self.mean[close_index].view(1, 1, 1).cuda()  # Shape: [1, 1, 1]
+        std_close = self.std[close_index].view(1, 1, 1).cuda()    # Shape: [1, 1, 1]
+        self.model.rev_output.set_statistics(mean_close, std_close)
+
     def forward(self, batch, batch_idx):
         var_x, marker_x, var_y, marker_y = [_.float() for _ in batch]
+        #print("Label before slicing (raw var_y):", var_y)
+
         label = var_y[:, -self.hparams.pred_len:, :, 0]
-        prediction = self.model(var_x, marker_x)[:, -self.hparams.pred_len:, :]
+        #print("Label after slicing:", label)
+        # Modified code: assume close price is at index 3
+        prediction = self.model(var_x, marker_x)[:, -self.hparams.pred_len:, 3:4]
+
+        # Verify the shape
+        # print(f"var_x: {var_x.shape}, var_y: {var_y.shape}, prediction: {prediction.shape}, label: {label.shape}")
+        # print("**********************************")
+        # print(prediction)
+        # print("!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        # print(label)
+
         return prediction, label
 
     def training_step(self, batch, batch_idx):
@@ -40,8 +58,10 @@ class LTSFRunner(L.LightningModule):
         prediction, label = self.forward(batch, batch_idx)
         mae = torch.nn.functional.l1_loss(prediction, label)
         mse = torch.nn.functional.mse_loss(prediction, label)
+        mean_error_percentage = torch.mean(torch.abs((label - prediction) / label) * 100)
         self.log('test/mae', mae, on_step=False, on_epoch=True, sync_dist=True)
         self.log('test/mse', mse, on_step=False, on_epoch=True, sync_dist=True)
+        self.log('test/error_percentage', mean_error_percentage, on_step=False, on_epoch=True, sync_dist=True)
 
     def configure_loss(self):
         self.loss_function = nn.MSELoss()

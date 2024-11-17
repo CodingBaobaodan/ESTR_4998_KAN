@@ -1,0 +1,6 @@
+1. We are currently using OHLC, but not volume, find a value to scale it.
+2. what are we prediciting? OHLC as well?
+3. We are using the adjusted OHLC value.
+4. check if the gradient is vanishing or exploding
+5. future improvemnet
+6. output the model activation function for interpreability =

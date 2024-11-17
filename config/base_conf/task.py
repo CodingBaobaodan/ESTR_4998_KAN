@@ -21,5 +21,5 @@ task_conf = dict(
     test_metric="test/mae",
     es_patience=20,
 
-    num_workers=2,
+    num_workers=1,
 )

@@ -30,6 +30,9 @@ class GeneralTSFDataset(Dataset):
         norm_feature = np.load(norm_feature_path)
 
         norm_var = norm_feature['norm_var']
+
+        #print("Raw norm_var first 10 rows:", norm_var[:10, :])
+
         norm_time_marker = norm_feature['norm_time_marker']
 
         border1s = [0, self.train_len, self.train_len + self.val_len]
@@ -50,8 +53,17 @@ class GeneralTSFDataset(Dataset):
         var_x = self.var[hist_start:hist_end, ...]
         marker_x = self.time_marker[hist_start:hist_end, ...]
 
-        var_y = self.var[hist_end:pred_end, ...]
+        #print(f"Index: {index}, Hist Range: {hist_start}-{hist_end}, Pred Range: {hist_end}-{pred_end}")
+        #var_y = self.var[hist_end:pred_end, ...]
+        # Modified code, assume close price index is at 3
+        var_y = self.var[hist_end:pred_end, 3, 0]
+        #print("Extracted var_y (close price) for index:", index, var_y)
+
         marker_y = self.time_marker[hist_end:pred_end, ...]
+
+        # Modified code: Adjust var_y shape to (pred_len, N=1, C=1) for consistency
+        var_y = var_y[:, np.newaxis, np.newaxis]  # Shape: (pred_len, 1, 1)
+
         return var_x, marker_x, var_y, marker_y
 
     def __len__(self):
