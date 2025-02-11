@@ -3,11 +3,13 @@ import inspect
 import os
 
 import lightning.pytorch as L
+from lightning.pytorch import Trainer
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim.lr_scheduler as lrs
-
+import matplotlib.pyplot as plt
+from . import ltsf_lossfunc
 
 class LTSFRunner(L.LightningModule):
     def __init__(self, **kargs):
@@ -26,6 +28,79 @@ class LTSFRunner(L.LightningModule):
         std_close = self.std[close_index].view(1, 1, 1).cuda()    # Shape: [1, 1, 1]
         self.model.rev_output.set_statistics(mean_close, std_close)
 
+        # To record the train and val loss for each epoch 
+        self.train_losses = []
+
+    def evaluate_trading_strategy(self, predictions_tomorrow, true_prices_tomorrow, true_prices_today):
+        """
+        Evaluates the trading strategy based on the model's predictions.
+        
+        :param predictions: List of predicted next day closing prices (T+1) for the entire period
+        :param true_prices: List of actual closing prices for the current day (T+1) for the entire period
+        
+        :return: a dictionary with average daily return, cumulative return, and the number of days with losses
+        """
+        # Initialize variables
+        daily_returns = []
+        cumulative_return = 1.0  # Start with a base value of 1 (100% initial investment)
+        total_profits = 0
+        loss_days = 0
+
+        print(f"Number of testing trading days : {len(true_prices_today)}")
+        
+        # Loop through predictions and actual prices
+        for i in range(len(predictions_tomorrow)):  # Loop till second last day to avoid out of range on true_prices[i+1]
+            predicted_price = predictions_tomorrow[i]
+            true_price_tomorrow = true_prices_tomorrow[i]  # Actual price for the next day (i+1)
+            true_price_today = true_prices_today[i]
+
+            # If predicted price is higher, long strategy
+            if predicted_price > true_price_today:
+                profit = true_price_tomorrow - true_price_today # Long position
+            # If predicted price is lower, short strategy
+            elif predicted_price < true_price_today:
+                profit = true_price_today - true_price_tomorrow  # Short position
+            else:
+                profit = 0  # No profit or loss if predicted = actual price
+            
+            # Calculate daily return and track loss days
+            daily_return = profit / true_price_today  # Return for the day
+            daily_returns.append(daily_return)
+            
+            if daily_return < 0:
+                loss_days += 1  # Count the day if there's a loss
+            
+            # Update cumulative return
+            cumulative_return *= (1 + daily_return)
+            total_profits += profit
+
+        # Calculate average daily return
+        avg_daily_return = np.mean(daily_returns)
+        
+        # Compile the results into a dictionary
+        evaluation_metrics = {
+            'average_daily_return': avg_daily_return,
+            'cumulative_return': cumulative_return - 1,  # subtract 1 to get the net return
+            'loss_days': loss_days,
+            'total_profits': total_profits
+        }
+        
+        return evaluation_metrics
+    
+    def on_test_epoch_end(self):
+        """
+        After all test steps, evaluate the trading strategy using accumulated predictions and actual prices.
+        """
+        if hasattr(self, 'predictions_tomorrow') and hasattr(self, 'true_prices_tomorrow') and hasattr(self, 'true_prices_today'):
+            # Evaluate the trading strategy using the full predictions and actual prices
+            evaluation_metrics = self.evaluate_trading_strategy(self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
+            
+            # Log the trading strategy evaluation metrics
+            self.log('test/average_daily_return', evaluation_metrics['average_daily_return'], on_step=False, on_epoch=True, sync_dist=True)
+            self.log('test/cumulative_return', evaluation_metrics['cumulative_return'], on_step=False, on_epoch=True, sync_dist=True)
+            self.log('test/loss_days', evaluation_metrics['loss_days'], on_step=False, on_epoch=True, sync_dist=True)
+            self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
+            
     def forward(self, batch, batch_idx):
         var_x, marker_x, var_y, marker_y = [_.float() for _ in batch]
         #print("Label before slicing (raw var_y):", var_y)
@@ -36,13 +111,16 @@ class LTSFRunner(L.LightningModule):
         prediction = self.model(var_x, marker_x)[:, -self.hparams.pred_len:, 3:4]
 
         # Verify the shape
+        # Note: prediction: torch.Size([batch_size, 1, 1]), label: torch.Size([batch_size, 1, 1])
         # print(f"var_x: {var_x.shape}, var_y: {var_y.shape}, prediction: {prediction.shape}, label: {label.shape}")
-        # print("**********************************")
         # print(prediction)
-        # print("!!!!!!!!!!!!!!!!!!!!!!!!!!")
         # print(label)
 
-        return prediction, label
+        # "Today" price is the last input step's close price
+        true_price_today = var_x[:, -1, 3] 
+
+        return prediction, label, true_price_today
+        # return prediction, label
 
     def training_step(self, batch, batch_idx):
         loss = self.loss_function(*self.forward(batch, batch_idx))
@@ -51,11 +129,13 @@ class LTSFRunner(L.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         loss = self.loss_function(*self.forward(batch, batch_idx))
-        self.log('val/loss', loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log('val/loss', loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
         return loss
 
     def test_step(self, batch, batch_idx):
-        prediction, label = self.forward(batch, batch_idx)
+        # prediction shape: torch.Size([1, 1, 1]), label shape: torch.Size([1, 1, 1])
+        # prediction, label = self.forward(batch, batch_idx)
+        prediction, label, true_price_today = self.forward(batch, batch_idx)
         mae = torch.nn.functional.l1_loss(prediction, label)
         mse = torch.nn.functional.mse_loss(prediction, label)
         mean_error_percentage = torch.mean(torch.abs((label - prediction) / label) * 100)
@@ -63,9 +143,25 @@ class LTSFRunner(L.LightningModule):
         self.log('test/mse', mse, on_step=False, on_epoch=True, sync_dist=True)
         self.log('test/error_percentage', mean_error_percentage, on_step=False, on_epoch=True, sync_dist=True)
 
-    def configure_loss(self):
-        self.loss_function = nn.MSELoss()
+        predicted_price_tomorrow = prediction.item()
+        true_price_tomorrow = label.item()
+        true_price_today = true_price_today.item()
+        
+        # Track predictions and actual prices for the entire testing period
+        if not hasattr(self, 'predictions_tomorrow'):
+            self.predictions_tomorrow = []
+            self.true_prices_tomorrow = []
+            self.true_prices_today = []
+        
+        # Accumulate predictions and actual prices
+        self.predictions_tomorrow.append(predicted_price_tomorrow)
+        self.true_prices_tomorrow.append(true_price_tomorrow)
+        self.true_prices_today.append(true_price_today)
 
+    def configure_loss(self):
+        # self.loss_function = ltsf_lossfunc.MSELossWrapper(reduction='mean')
+        self.loss_function = ltsf_lossfunc.MSEPenaltyLoss(penalty_factor=1.0)
+        
     def configure_optimizers(self):
         if self.hparams.optimizer == 'Adam':
             optimizer = torch.optim.Adam(
@@ -148,3 +244,14 @@ class LTSFRunner(L.LightningModule):
             time_marker[..., -1] = time_marker[..., -1] * self.hparams.max_event_per_day
 
         return time_marker
+
+    # def plot_losses(self):
+    #     # Plot the loss values after training is complete
+    #     plt.figure(figsize=(10, 5))
+    #     plt.plot(range(1, len(self.train_losses) + 1), self.train_losses, marker='o', label='Train Loss')
+    #     plt.xlabel('Epoch')
+    #     plt.ylabel('Loss')
+    #     plt.title('Training Loss vs Epoch')
+    #     plt.legend()
+    #     plt.grid(True)
+    #     plt.show()

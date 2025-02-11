@@ -12,6 +12,35 @@ from core.ltsf_runner import LTSFRunner
 from core.util import cal_conf_hash
 from core.util import load_module_from_path
 
+# Modified Code to invoke call back to print the loss per epoch
+from lightning.pytorch.callbacks import Callback
+class TrainLossLoggerCallback(Callback):
+    def __init__(self):
+        super().__init__()
+        self.train_losses = []
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        """
+        Called at the end of the training epoch.
+        Collects the average training loss and appends it to the train_losses list.
+        """
+        # Retrieve the average training loss from callback_metrics
+        avg_loss = trainer.callback_metrics.get('train/loss')
+        if avg_loss is not None:
+            # Append the average loss to the list
+            self.train_losses.append(avg_loss.item())
+            # Print the average loss for the epoch
+            print(f"Epoch {trainer.current_epoch + 1}: Average Train Loss = {avg_loss.item():.4f}")
+
+    def on_train_end(self, trainer, pl_module):
+        """
+        Called at the end of training.
+        Prints the list of average training losses per epoch.
+        """
+        print("\nTraining Loss per Epoch:")
+        for epoch, loss in enumerate(self.train_losses, 1):
+            print(f"Epoch {epoch}: {loss:.4f}")
+
 
 def load_config(exp_conf_path):
     # 加载 exp_conf
@@ -60,7 +89,9 @@ def train_func(hyper_conf, conf):
             patience=conf["es_patience"],
         ),
         LearningRateMonitor(logging_interval="epoch"),
+        TrainLossLoggerCallback(), # Modified Code to invoke call back to print the loss per epoch
     ]
+
 
     trainer = L.Trainer(
         devices=conf["devices"],
@@ -78,6 +109,8 @@ def train_func(hyper_conf, conf):
 
     trainer.fit(model=model, datamodule=data_module)
     trainer.test(model, datamodule=data_module, ckpt_path='best')
+
+    # model.plot_losses()
 
 
 if __name__ == '__main__':

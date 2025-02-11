@@ -7,7 +7,7 @@ task_conf = dict(
     pred_len=1,
 
     batch_size=8,
-    max_epochs=50,
+    max_epochs=10,
     #lr=0.0001,
     lr=0.001,
     optimizer="AdamW",
@@ -19,7 +19,7 @@ task_conf = dict(
     gradient_clip_val=5,
     val_metric="val/loss",
     test_metric="test/mae",
-    es_patience=20,
+    es_patience=10,
 
-    num_workers=1,
+    num_workers=10,
 )
