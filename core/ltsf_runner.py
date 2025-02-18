@@ -18,15 +18,18 @@ class LTSFRunner(L.LightningModule):
         self.load_model()
         self.configure_loss()
 
+        # Load the scaler info which should include 'min' and 'max'
         stat = np.load(os.path.join(self.hparams.data_root, self.hparams.dataset_name, 'var_scaler_info.npz'))
-        self.register_buffer('mean', torch.tensor(stat['mean']).float())
-        self.register_buffer('std', torch.tensor(stat['std']).float())
 
-        # Modified code
-        close_index = 3  # Index of Close price in OHLC
-        mean_close = self.mean[close_index].view(1, 1, 1).cuda()  # Shape: [1, 1, 1]
-        std_close = self.std[close_index].view(1, 1, 1).cuda()    # Shape: [1, 1, 1]
-        self.model.rev_output.set_statistics(mean_close, std_close)
+        # Assuming 'min' and 'max' are stored in the file instead of 'mean' and 'std'
+        self.register_buffer('min', torch.tensor(stat['min']).float())
+        self.register_buffer('max', torch.tensor(stat['max']).float())
+
+        # Use the closing price channel (index 3) for output de-normalization.
+        # close_index = 3  # Index of Close price in OHLC
+        # min_close = self.min[close_index].view(1, 1, 1).cuda()   # Shape: [1, 1, 1]
+        # max_close = self.max[close_index].view(1, 1, 1).cuda()   # Shape: [1, 1, 1]
+        # self.model.rev_output.set_statistics(min_close, max_close)
 
         # To record the train and val loss for each epoch 
         self.train_losses = []
@@ -103,22 +106,16 @@ class LTSFRunner(L.LightningModule):
             
     def forward(self, batch, batch_idx):
         var_x, marker_x, var_y, marker_y = [_.float() for _ in batch]
-        #print("Label before slicing (raw var_y):", var_y)
-
+        # Extract label from var_y.
+        # (Note: var_y is already constructed to carry only the closing price information.)
         label = var_y[:, -self.hparams.pred_len:, :, 0]
-        #print("Label after slicing:", label)
-        # Modified code: assume close price is at index 3
-        prediction = self.model(var_x, marker_x)[:, -self.hparams.pred_len:, 3:4]
-
-        # Verify the shape
-        # Note: prediction: torch.Size([batch_size, 1, 1]), label: torch.Size([batch_size, 1, 1])
-        # print(f"var_x: {var_x.shape}, var_y: {var_y.shape}, prediction: {prediction.shape}, label: {label.shape}")
-        # print(prediction)
-        # print(label)
-
-        # "Today" price is the last input step's close price
-        true_price_today = var_x[:, -1, 3] 
-
+        # Now, call the model and keep all output channels (which is only 1 channel now).
+        prediction = self.model(var_x, marker_x)[:, -self.hparams.pred_len:, :]
+        # true_price_today is now directly taken from the closing price, which is at index 3 in the original var_x.
+        true_price_today = var_x[:, -1, 3]
+        # print(f"prediction shape: {prediction.shape} and label shape {label.shape}")
+        # print(f"prediction value: \n {prediction}")
+        # print(f"label value: \n {label}")
         return prediction, label, true_price_today
         # return prediction, label
 
@@ -159,7 +156,7 @@ class LTSFRunner(L.LightningModule):
         self.true_prices_today.append(true_price_today)
 
     def configure_loss(self):
-        # self.loss_function = ltsf_lossfunc.MSELossWrapper(reduction='mean')
+        #self.loss_function = ltsf_lossfunc.MSELossWrapper(reduction='mean')
         self.loss_function = ltsf_lossfunc.MSEPenaltyLoss(penalty_factor=1.0)
         
     def configure_optimizers(self):

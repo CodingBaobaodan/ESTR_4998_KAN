@@ -22,8 +22,8 @@ macro_series = {
     'CPI': 'CPIAUCSL'
 }
 
-start_date = '2000-01-01'
-end_date = '2005-12-31'
+start_date = '2017-01-01'
+end_date = '2020-12-31'
 
 # Fetch OHLCV data from Yahoo Finance
 ticker_symbol = 'MSFT'
@@ -52,6 +52,7 @@ aligned_macro = macro_df.reindex(stock_data.index).ffill().bfill()
 
 # Calculate new technical indicators
 # # 5-Day Weighted Close Price (Weighted Close: (High + Low + 2*Close)/4)
+#combined_data = stock_data
 combined_data = pd.concat([stock_data, aligned_macro], axis=1)
 
 # Calculate Technical Indicators
@@ -63,12 +64,12 @@ combined_data['5AvgPrice'] = combined_data['Close'].rolling(window=5).mean()
 # Drop rows with NaN values resulting from rolling calculations
 combined_data.dropna(inplace=True)
 
-# Calculate mean and std across all columns for normalization
-mean = combined_data.mean()
-std = combined_data.std()
+# Calculate min and max across all columns for min-max normalization
+min_val = combined_data.min()
+max_val = combined_data.max()
 
-# Save scaling information
-np.savez(os.path.join(output_dir, 'var_scaler_info.npz'), mean=mean.values, std=std.values)
+# Save scaling information using min and max values
+np.savez(os.path.join(output_dir, 'var_scaler_info.npz'), min=min_val.values, max=max_val.values)
 
 dates = combined_data.index
 norm_time_marker = np.stack([
@@ -84,9 +85,9 @@ np.savez(os.path.join(output_dir, 'feature.npz'), norm_var=combined_data.values,
 # Verify shapes
 print("Final combined data shape:", combined_data.shape)  # Should have OHLCV + macro + new indicators columns
 print("norm_time_marker shape:", norm_time_marker.shape)
-print(f"mean shape: {mean.shape} and std shape {std.shape}")
-print(f"mean value: \n {mean}")
-print(f"std value: \n {std}")
+print(f"min shape: {min_val.shape} and max shape {max_val.shape}")
+print(f"min value: \n {min_val}")
+print(f"max value: \n {max_val}")
 print("First 10 rows of the downloaded data:")
 print(combined_data.head(10))
 print("Last 10 rows of the downloaded data:")

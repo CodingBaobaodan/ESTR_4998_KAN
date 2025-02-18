@@ -4,3 +4,24 @@
 4. check if the gradient is vanishing or exploding
 5. future improvemnet
 6. output the model activation function for interpreability =
+7. For this model, the normalization is kinda problematic, I think why the train_loss_epoch is so high for 2000-2005 but 
+    become normal (means trainloss < testloss) in 2005-2010 is because 2000-2005, the price flucuate quite a long and 
+    sclaing has some problem.
+
+
+Semester two experiment log:
+1. Using higher inference window size, the performance is better.
+2. In nn.ModuleList, WaveKANLayer is good in capturing drastic changes, TaylorKANLayer is good in capturing smooth changes, 
+    combining them together achieve the best result, 
+    TaylorKANLayer's order = 3 achieve the best result.
+3. Should we do validation set in the real time inference? Since we want to predict data ASAP?
+4. Seems like shorter inference window size, the performance is better.
+5. revin_affine = True or Flase give different result , it depends on period. 
+6. There are many rooms to improve the trading strategy since we get same loss day but 
+    very different profit. So we can see that in some day we should do nothing .
+
+TODO (18/02/2025)
+1. Add learnable confidence estimation to the model in DenseRMoK.py
+2. Add more trading strategy to the ltsf_runner.py, create a file for trading strategy.
+
+

@@ -76,18 +76,18 @@ def train_func(hyper_conf, conf):
     conf["exp_dir"] = os.path.join(save_dir, conf["conf_hash"], 'seed_{}'.format(conf["seed"]))
 
     callbacks = [
-        ModelCheckpoint(
-            monitor=conf["val_metric"],
-            mode="min",
-            save_top_k=1,
-            save_last=False,
-            every_n_epochs=1,
-        ),
-        EarlyStopping(
-            monitor=conf["val_metric"],
-            mode='min',
-            patience=conf["es_patience"],
-        ),
+        # ModelCheckpoint(
+        #     monitor=conf["val_metric"],
+        #     mode="min",
+        #     save_top_k=1,
+        #     save_last=False,
+        #     every_n_epochs=1,
+        # ),
+        # EarlyStopping(
+        #     monitor=conf["val_metric"],
+        #     mode='min',
+        #     patience=conf["es_patience"],
+        # ),
         LearningRateMonitor(logging_interval="epoch"),
         TrainLossLoggerCallback(), # Modified Code to invoke call back to print the loss per epoch
     ]
@@ -102,13 +102,17 @@ def train_func(hyper_conf, conf):
         gradient_clip_algorithm=conf["gradient_clip_algorithm"] if "gradient_clip_algorithm" in conf else "norm",
         gradient_clip_val=conf["gradient_clip_val"],
         default_root_dir=conf["save_root"],
+        limit_val_batches=0, # Disable validation
+        check_val_every_n_epoch=0, # No validation every n epoch
     )
 
     data_module = DataInterface(**conf)
     model = LTSFRunner(**conf)
 
     trainer.fit(model=model, datamodule=data_module)
-    trainer.test(model, datamodule=data_module, ckpt_path='best')
+    #trainer.test(model, datamodule=data_module, ckpt_path='best')
+    trainer.test(model, datamodule=data_module)
+
 
     # model.plot_losses()
 

@@ -3,7 +3,7 @@ task_conf = dict(
     # pred_len=720,
 
     # For stock price prediction
-    hist_len=30,
+    hist_len=60,
     pred_len=1,
 
     batch_size=8,
