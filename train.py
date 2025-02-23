@@ -2,6 +2,7 @@ import argparse
 import importlib
 import importlib.util
 import os
+import subprocess
 
 import lightning.pytorch as L
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint, EarlyStopping
@@ -117,6 +118,10 @@ def train_func(hyper_conf, conf):
     # model.plot_losses()
 
 
+
+ticker_symbols = ['AAPL', 'MSFT']
+#, 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'WDC']
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", type=str)
@@ -127,12 +132,17 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=1, help="seed")
     args = parser.parse_args()
 
-    training_conf = {
-        "seed": int(args.seed),
-        "data_root": args.data_root,
-        "save_root": args.save_root,
-        "devices": args.devices,
-        "use_wandb": args.use_wandb,
-    }
-    init_exp_conf = load_config(args.config)
-    train_func(training_conf, init_exp_conf)
+    for symbol in ticker_symbols:
+        data_root = f"dataset/{symbol}"
+        args.config = f"config/reproduce_conf/RMoK/{symbol}_30for1.py"
+
+        training_conf = {
+            "seed": int(args.seed),
+            "data_root": data_root,
+            "save_root": args.save_root,
+            "devices": args.devices,
+            "use_wandb": args.use_wandb,
+        }
+
+        init_exp_conf = load_config(args.config)
+        train_func(training_conf, init_exp_conf)

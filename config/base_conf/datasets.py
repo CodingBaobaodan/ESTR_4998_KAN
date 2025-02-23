@@ -54,10 +54,199 @@ Illness_conf = dict(
     data_split=[676, 97, 193],
 )
 
-# Microsoft Corporation (MSFT)
+AAPL_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+ADBE_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+ADI_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+AMAT_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+AMD_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+CSCO_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+GLW_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+HPQ_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+IBM_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+INTC_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+KLAC_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+LRCX_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
 MSFT_conf = dict(
     dataset_name='MSFT',
-    var_num=13,                   
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+MSI_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+MU_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+ORCL_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+PTC_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+TXN_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+TYL_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
+    freq=1440,                    # Daily frequency in minutes
+    #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
+    # data_split=[754, 252, 504]
+    data_split=[754, 0, 100]
+
+)
+
+WDC_conf = dict(
+    dataset_name='AAPL',
+    var_num=50,                   
     freq=1440,                    # Daily frequency in minutes
     #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
     # data_split=[754, 252, 504]
