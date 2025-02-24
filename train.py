@@ -13,6 +13,8 @@ from core.ltsf_runner import LTSFRunner
 from core.util import cal_conf_hash
 from core.util import load_module_from_path
 
+from genetic import *
+
 # Modified Code to invoke call back to print the loss per epoch
 from lightning.pytorch.callbacks import Callback
 class TrainLossLoggerCallback(Callback):
@@ -119,8 +121,8 @@ def train_func(hyper_conf, conf):
 
 
 
-ticker_symbols = ['AAPL', 'MSFT']
-#, 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'WDC']
+ticker_symbols = ['AAPL']
+#, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'WDC']
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -145,4 +147,22 @@ if __name__ == '__main__':
         }
 
         init_exp_conf = load_config(args.config)
+        '''
+
+        n_features = 6
+        n_hyperparameters = 11
+        population_size = 10
+        generations = 10
+        mutation_rate = [0.1]
+        fg = [0, 0]
+
+
+
+        # Run the genetic algorithm
+        best_solution = genetic_algorithm(population_size, generations, mutation_rate, n_features, n_hyperparameters)
+        print(f"Best solution found: a = {best_solution[0]}, b = {best_solution[1]}, c = {best_solution[2]}")
+        
+        # TO DO ////// Update config with optimal features
+        '''
         train_func(training_conf, init_exp_conf)
+

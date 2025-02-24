@@ -12,7 +12,8 @@ class GeneralTSFDataset(Dataset):
     """
 
     def __init__(self, data_root, dataset_name, hist_len, pred_len, data_split, freq, mode):
-        self.data_dir = os.path.join(data_root, dataset_name)
+        #self.data_dir = os.path.join(data_root, dataset_name)
+        self.data_dir = data_root
         self.hist_len = hist_len
         self.pred_len = pred_len
         self.train_len, self.val_len, self.test_len = data_split

@@ -19,7 +19,8 @@ class LTSFRunner(L.LightningModule):
         self.configure_loss()
 
         # Load the scaler info which should include 'min' and 'max'
-        stat = np.load(os.path.join(self.hparams.data_root, self.hparams.dataset_name, 'var_scaler_info.npz'))
+        #stat = np.load(os.path.join(self.hparams.data_root, self.hparams.dataset_name, 'var_scaler_info.npz'))
+        stat = np.load(os.path.join(self.hparams.data_root, 'var_scaler_info.npz'))
 
         # Assuming 'min' and 'max' are stored in the file instead of 'mean' and 'std'
         self.register_buffer('min', torch.tensor(stat['min']).float())

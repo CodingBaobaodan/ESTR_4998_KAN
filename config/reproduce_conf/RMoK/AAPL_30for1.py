@@ -7,5 +7,5 @@ exp_conf = dict(
 
     revin_affine=False,       # Retain other configurations as in ETTh1
 
-    lr=0.001,                 # Learning rate
+    lr=0.0001,                 # Learning rate
 )

@@ -197,7 +197,7 @@ class DenseRMoK(nn.Module):
         mean_variance = torch.mean(expert_variance, dim=-1, keepdim=True)  # Shape: (B, pred_len, 1)
         # Transform variance to confidence: lower variance yields higher confidence.
         confidence = 1 / (1 + mean_variance)
-        print(f"confidence shape and value: {confidence.shape} and {confidence}")
+        #print(f"confidence shape and value: {confidence.shape} and {confidence}")
         # ---------- End Confidence Estimation ----------
 
 

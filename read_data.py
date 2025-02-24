@@ -301,7 +301,7 @@ index_df.to_csv(f"{output_dir}/index_df.csv", index=True)
 
 
 cap_weighted_composite_index_df = cap_weighted_composite_index(stock_df)
-top_k_correlations = cap_weighted_correlation_plots(cap_weighted_composite_index_df, macro_df, 10)
+top_k_correlations = cap_weighted_correlation_plots(cap_weighted_composite_index_df, macro_df, k=10)
 
 
 

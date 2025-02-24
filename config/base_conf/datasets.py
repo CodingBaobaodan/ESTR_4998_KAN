@@ -60,7 +60,8 @@ AAPL_conf = dict(
     freq=1440,                    # Daily frequency in minutes
     #data_split=[975, 31, 504],     # Example split: 755 days for training, 221 for testing
     # data_split=[754, 252, 504]
-    data_split=[754, 0, 100]
+    #data_split=[754, 0, 100]
+    data_split=[200, 0, 124]
 
 )
 
