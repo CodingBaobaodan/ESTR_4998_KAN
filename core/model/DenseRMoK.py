@@ -92,7 +92,7 @@ class RevIN(nn.Module):
 
 
 class DenseRMoK(nn.Module):
-    def __init__(self, hist_len, pred_len, var_num, num_experts=4, drop=0.1, revin_affine=True):
+    def __init__(self, hist_len, pred_len, var_num, num_experts=2, drop=0.1, revin_affine=True):
         super(DenseRMoK, self).__init__()
         self.hist_len = hist_len
         self.pred_len = pred_len
@@ -110,11 +110,21 @@ class DenseRMoK(nn.Module):
         self.experts = nn.ModuleList([
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
-            # TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
-            # TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
+            TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
+            TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
             WaveKANLayer(hist_len, pred_len, wavelet_type="mexican_hat", device="cuda"),
             WaveKANLayer(hist_len, pred_len, wavelet_type="mexican_hat", device="cuda"),
+
+
+            # TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
+            # TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
+            #KANInterface(hist_len, pred_len, layer_type="Linear"),
+            #KANInterface(hist_len, pred_len, layer_type="Linear")
+
+            #WaveKANLayer(hist_len, pred_len, wavelet_type="mexican_hat", device="cuda"),
+            #WaveKANLayer(hist_len, pred_len, wavelet_type="mexican_hat", device="cuda"),
         ])
+
         # Modified Module combination 1 - Not good performance
         # self.experts = nn.ModuleList([
         #     TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
@@ -197,7 +207,7 @@ class DenseRMoK(nn.Module):
         mean_variance = torch.mean(expert_variance, dim=-1, keepdim=True)  # Shape: (B, pred_len, 1)
         # Transform variance to confidence: lower variance yields higher confidence.
         confidence = 1 / (1 + mean_variance)
-        #print(f"confidence shape and value: {confidence.shape} and {confidence}")
+        # print(f"confidence shape and value: {confidence.shape} and {confidence}")
         # ---------- End Confidence Estimation ----------
 
 
@@ -206,7 +216,7 @@ class DenseRMoK(nn.Module):
         # print("prediction shape: ", prediction.shape)
 
         # Apply final layer to reduce output from [B, pred_len, var_num] to [B, pred_len, 1]
-        return prediction
+        return prediction, confidence
 
         
         

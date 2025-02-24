@@ -60,7 +60,7 @@ class MSEPenaltyLoss(nn.Module):
         super(MSEPenaltyLoss, self).__init__()
         self.penalty_factor = penalty_factor
 
-    def forward(self, predictions, labels, true_price_today):
+    def forward(self, predictions, labels, true_price_today, confidence):
         """
         Args:
             predictions (torch.Tensor): shape [batch_size, 1, 1],
@@ -88,6 +88,8 @@ class MSEPenaltyLoss(nn.Module):
         penalty_mask = (predicted_diff * actual_diff < 0).float()  # 1 if wrong direction, 0 otherwise
         
         # Compute the extra penalty (scaled by the square of actual_diff)
+
+
         penalty_loss = (penalty_mask * self.penalty_factor * (actual_diff ** 2)).mean()
         
         # Total loss: Use MSE if direction is correct; otherwise, add the penalty.
@@ -103,5 +105,5 @@ class MSELossWrapper(nn.Module):
         super(MSELossWrapper, self).__init__()
         self.mse = nn.MSELoss(reduction=reduction)
 
-    def forward(self, predictions, labels, actual_price_today):
+    def forward(self, predictions, labels, actual_price_today, confidence):
         return self.mse(predictions, labels)

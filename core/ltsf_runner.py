@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.optim.lr_scheduler as lrs
 import matplotlib.pyplot as plt
+from . import util
 from . import ltsf_lossfunc
 
 class LTSFRunner(L.LightningModule):
@@ -104,6 +105,9 @@ class LTSFRunner(L.LightningModule):
             self.log('test/cumulative_return', evaluation_metrics['cumulative_return'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/loss_days', evaluation_metrics['loss_days'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
+
+            # Plot confidence vs loss
+            util.plot_confidence_vs_loss(self.confidences, self.custom_losses, self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
             
     def forward(self, batch, batch_idx):
         var_x, marker_x, var_y, marker_y = [_.float() for _ in batch]
@@ -111,13 +115,14 @@ class LTSFRunner(L.LightningModule):
         # (Note: var_y is already constructed to carry only the closing price information.)
         label = var_y[:, -self.hparams.pred_len:, :, 0]
         # Now, call the model and keep all output channels (which is only 1 channel now).
-        prediction = self.model(var_x, marker_x)[:, -self.hparams.pred_len:, :]
+        prediction, confidence = self.model(var_x, marker_x)
+        prediction = prediction[:, -self.hparams.pred_len:, :]
         # true_price_today is now directly taken from the closing price, which is at index 3 in the original var_x.
         true_price_today = var_x[:, -1, 3]
         # print(f"prediction shape: {prediction.shape} and label shape {label.shape}")
         # print(f"prediction value: \n {prediction}")
         # print(f"label value: \n {label}")
-        return prediction, label, true_price_today
+        return prediction, label, true_price_today, confidence
         # return prediction, label
 
     def training_step(self, batch, batch_idx):
@@ -133,32 +138,40 @@ class LTSFRunner(L.LightningModule):
     def test_step(self, batch, batch_idx):
         # prediction shape: torch.Size([1, 1, 1]), label shape: torch.Size([1, 1, 1])
         # prediction, label = self.forward(batch, batch_idx)
-        prediction, label, true_price_today = self.forward(batch, batch_idx)
+        prediction, label, true_price_today, confidence = self.forward(batch, batch_idx)
         mae = torch.nn.functional.l1_loss(prediction, label)
         mse = torch.nn.functional.mse_loss(prediction, label)
+        custom_loss = self.loss_function(prediction, label, true_price_today, confidence)
         mean_error_percentage = torch.mean(torch.abs((label - prediction) / label) * 100)
         self.log('test/mae', mae, on_step=False, on_epoch=True, sync_dist=True)
         self.log('test/mse', mse, on_step=False, on_epoch=True, sync_dist=True)
+        self.log('test/custom_loss', custom_loss, on_step=False, on_epoch=True, sync_dist=True)
         self.log('test/error_percentage', mean_error_percentage, on_step=False, on_epoch=True, sync_dist=True)
 
         predicted_price_tomorrow = prediction.item()
         true_price_tomorrow = label.item()
         true_price_today = true_price_today.item()
+        confidence_score = confidence.item()
         
         # Track predictions and actual prices for the entire testing period
         if not hasattr(self, 'predictions_tomorrow'):
             self.predictions_tomorrow = []
             self.true_prices_tomorrow = []
             self.true_prices_today = []
+            self.confidences = []
+            self.custom_losses = []
         
         # Accumulate predictions and actual prices
         self.predictions_tomorrow.append(predicted_price_tomorrow)
         self.true_prices_tomorrow.append(true_price_tomorrow)
         self.true_prices_today.append(true_price_today)
+        self.confidences.append(confidence_score)
+        self.custom_losses.append(custom_loss.item())
+
 
     def configure_loss(self):
         #self.loss_function = ltsf_lossfunc.MSELossWrapper(reduction='mean')
-        self.loss_function = ltsf_lossfunc.MSEPenaltyLoss(penalty_factor=1.0)
+        self.loss_function = ltsf_lossfunc.MSEPenaltyLoss(penalty_factor=5.0)
         
     def configure_optimizers(self):
         if self.hparams.optimizer == 'Adam':
