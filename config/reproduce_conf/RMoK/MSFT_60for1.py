@@ -5,7 +5,7 @@ exp_conf = dict(
     hist_len=60,
     pred_len=1,
 
-    revin_affine=False,       # Retain other configurations as in ETTh1
+    revin_affine=True,       # Retain other configurations as in ETTh1
 
     lr=0.001,                 # Learning rate
 )

@@ -18,10 +18,18 @@ Semester two experiment log:
 4. Seems like shorter inference window size, the performance is better.
 5. revin_affine = True or Flase give different result , it depends on period. 
 6. There are many rooms to improve the trading strategy since we get same loss day but 
-    very different profit. So we can see that in some day we should do nothing .
+    very different profit. So we can see that in some day we should do nothing.
 
 TODO (18/02/2025)
 1. Add learnable confidence estimation to the model in DenseRMoK.py
 2. Add more trading strategy to the ltsf_runner.py, create a file for trading strategy.
+
+TODO (24/02/2025)
+1. Try this paper:Improving the prediction of asset returns with machine learning by using a
+custom loss function.
+2. Try Bayesian Neural Networks (BNNs)
+
+Note (24/02/2025)
+1. Using variance between model prediction to estimate the confidence does not work well.
 
 

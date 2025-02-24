@@ -22,7 +22,7 @@ macro_series = {
     'CPI': 'CPIAUCSL'
 }
 
-start_date = '2017-01-01'
+start_date = '2015-01-01'
 end_date = '2020-12-31'
 
 # Fetch OHLCV data from Yahoo Finance
@@ -35,7 +35,10 @@ stock_data = msft.history(
     auto_adjust=False
 )[['Open', 'High', 'Low', 'Close', 'Volume']]
 
-stock_data.index = stock_data.index.tz_localize(None)  # Remove timezone
+if stock_data.empty:
+    print("No data retrieved for the specified date range.")
+else:
+    stock_data.index = stock_data.index.tz_localize(None)  # Remove timezone
 
 # Fetch macroeconomic data
 macro_data = {}
