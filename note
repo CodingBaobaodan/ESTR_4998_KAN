@@ -34,4 +34,4 @@ Note (24/02/2025)
 
 
 23/02/2025: include >=2 stocks, new command arguments without the need to give config and dataset 
-python3 /ESTR4999_my_work/train.py --devices 1
+python3 ESTR_4998_KAN/train.py --devices 1

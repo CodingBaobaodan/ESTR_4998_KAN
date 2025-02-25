@@ -1,6 +1,6 @@
 exp_conf = dict(
     model_name="DenseRMoK",
-    dataset_name='AAPL',     # Set to AAPL to point to your new dataset
+    dataset_name='MSFT',     # Set to MSFT to point to your new dataset
 
     hist_len=60,
     pred_len=1,

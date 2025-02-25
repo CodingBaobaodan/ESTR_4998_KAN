@@ -2,6 +2,7 @@ import argparse
 import importlib
 import importlib.util
 import os
+import re
 import subprocess
 
 import lightning.pytorch as L
@@ -13,7 +14,7 @@ from core.ltsf_runner import LTSFRunner
 from core.util import cal_conf_hash
 from core.util import load_module_from_path
 
-from genetic import *
+from genetic import genetic_algorithm
 
 # Modified Code to invoke call back to print the loss per epoch
 from lightning.pytorch.callbacks import Callback
@@ -64,7 +65,7 @@ def load_config(exp_conf_path):
     return fused_conf
 
 
-def train_func(hyper_conf, conf):
+def train_init(hyper_conf, conf):
     if hyper_conf is not None:
         for k, v in hyper_conf.items():
             conf[k] = v
@@ -112,12 +113,14 @@ def train_func(hyper_conf, conf):
     data_module = DataInterface(**conf)
     model = LTSFRunner(**conf)
 
+    return trainer, data_module, model
+
+def train_func(trainer, data_module, model):
     trainer.fit(model=model, datamodule=data_module)
     #trainer.test(model, datamodule=data_module, ckpt_path='best')
     trainer.test(model, datamodule=data_module)
 
-
-    # model.plot_losses()
+    model.plot_losses()
 
 
 
@@ -135,34 +138,45 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     for symbol in ticker_symbols:
-        data_root = f"dataset/{symbol}"
-        args.config = f"config/reproduce_conf/RMoK/{symbol}_30for1.py"
-
-        training_conf = {
-            "seed": int(args.seed),
-            "data_root": data_root,
-            "save_root": args.save_root,
-            "devices": args.devices,
-            "use_wandb": args.use_wandb,
-        }
+        
+        # Using regular expressions to match the pattern _{int}for{int}.py
+        pattern = re.compile(rf"{symbol}_(\d+)for(\d+)\.py")
+        matching_files = [config_file for config_file in os.listdir("config/reproduce_conf/RMoK/") if pattern.match(config_file)]
+        
+        if matching_files:
+            args.config = f"config/reproduce_conf/RMoK/{matching_files[0]}"
+        else:
+            print(f"No matching config file found for {symbol}.")
 
         init_exp_conf = load_config(args.config)
-        '''
+        
+        training_conf = {
+            "seed": int(args.seed),
+            "data_root": f"dataset/{symbol}",
+            "save_root": args.save_root,
+            "devices": args.devices,
+            "use_wandb": args.use_wandb
+            #, "features_mask":[]
+        }
 
-        n_features = 6
-        n_hyperparameters = 11
-        population_size = 10
-        generations = 10
-        mutation_rate = [0.1]
-        fg = [0, 0]
-
-
+        ''' # TO DO ///
+        trainer, data_module, model = train_init(training_conf, init_exp_conf)
 
         # Run the genetic algorithm
-        best_solution = genetic_algorithm(population_size, generations, mutation_rate, n_features, n_hyperparameters)
-        print(f"Best solution found: a = {best_solution[0]}, b = {best_solution[1]}, c = {best_solution[2]}")
-        
-        # TO DO ////// Update config with optimal features
-        '''
-        train_func(training_conf, init_exp_conf)
+        population_size = 10
+        total_generations = 10
+        n_features = 50
+        n_hyperparameters = 11
 
+        best_solution = genetic_algorithm(population_size, total_generations, n_features, n_hyperparameters, trainer, data_module, model)
+        print("Best Solution found:", best_solution)
+
+        training_conf["features_mask"] = best_solution.genes["features"]
+        print(training_conf["features_mask"])
+        trainer, data_module, model = train_init(training_conf, init_exp_conf)
+        train_func(trainer, data_module, model)
+        '''
+        
+        trainer, data_module, model = train_init(training_conf, init_exp_conf) # Train final optimal model
+        train_func(trainer, data_module, model)
+        

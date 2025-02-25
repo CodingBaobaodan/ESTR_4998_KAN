@@ -4,6 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+seed_value = 42
+random.seed(seed_value)
+
 # Define a basic structure for Chromosome and Population
 class Chromosome:
     def __init__(self, features, hyperparameters):
@@ -12,16 +15,24 @@ class Chromosome:
             'hyperparameters': hyperparameters,
         }
 
-def fitness_function(ind):
-    selected_list = ind.genes['features'] 
-    selected_columns = [col for col, sel in zip(df.columns, selected_list) if sel == 1]
-    selected_df = df[selected_columns]
-
-
+def decode(ind):
     window_size_list, KAN_layers_list = ind.genes['hyperparameters'][:5], ind.genes['hyperparameters'][5:]
     window_size = int("".join(map(str, window_size_list)), 2)
     (WaveKAN, NaiveFourierKAN, JacobiKAN, ChebyKAN, TaylorKAN, RBFKAN) = KAN_layers_list
-    return selected_df, window_size, WaveKAN, NaiveFourierKAN, JacobiKAN, ChebyKAN, TaylorKAN, RBFKAN
+
+    return window_size, WaveKAN, NaiveFourierKAN, JacobiKAN, ChebyKAN, TaylorKAN, RBFKAN
+
+def fitness_function(ind, trainer=None, data_module=None, model=None):
+    # TO DO // Connect Trainer, data_module, model
+
+    selected_list = ind.genes['features'] 
+    #selected_columns = [col for col, sel in zip(df.columns, selected_list) if sel == 1]
+    #selected_df = df[selected_columns]
+
+
+    window_size, WaveKAN, NaiveFourierKAN, JacobiKAN, ChebyKAN, TaylorKAN, RBFKAN = decode(ind)
+    
+    return 1 # TO DO // Actual Loss
 
 def create_initial_population(population_size):
     # Initialize a population of chromosomes with random values
@@ -115,52 +126,60 @@ def mutation(chromosome, mutation_rate):
     return chromosome
 
 
-def genetic_algorithm(population_size, generations, mutation_rate, n_features, n_hyperparameters):
+def genetic_algorithm(population_size, total_generations, n_features, n_hyperparameters, trainer, data_module, model):
     population = create_initial_population(population_size)
     
-    # Prepare for plotting
-    fig, axs = plt.subplots(3, 1, figsize=(12, 18))  # 3 rows, 1 column for subplots
     best_performers = []
     all_populations = []
+
+    # Initialize mutation_rate and fg lists with initial values
+    fg = [0] # // TO DO 
+    mutation_rate = [0.1]
 
     # Prepare for table
     table = PrettyTable()
     table.field_names = ["Generation", "Features", "Hyperparameters", "Fitness"]
 
-    for generation in range(generations):
-        fitnesses = [fitness_function(ind) for ind in population]
+    for generation in range(total_generations):
+        fitnesses = [fitness_function(ind, trainer, data_module, model) for ind in population]
 
         # Store the best performer of the current generation
         best_individual = max(population, key=fitness_function)
-        best_fitness = fitness_function(best_individual)
+        best_fitness = fitness_function(best_individual, trainer, data_module, model)
         best_performers.append((best_individual, best_fitness))
         all_populations.append(population[:])
-        table.add_row([generation + 1, best_individual.genes['features'], best_individual.genes['hyperparameters'], best_fitness])
+        table.add_row([generation + 1, "".join(map(str, best_individual.genes['features'])), "".join(map(str, best_individual.genes['hyperparameters'])), best_fitness])
 
         population = selection(population, fitnesses)
 
         next_population = []
-        for i in range(0, len(population), 2):
+        for i in range(0, len(population)-1, 2):
             parent1 = population[i]
             parent2 = population[i + 1]
 
-            if (mutation_rate[generation] == (generations//2)) or ((fg[-1]-fg[-2]) == 0) == 1:
+            if (generation == (total_generations//2)) or ((len(fg) >= 2) and ((fg[-1]-fg[-2]) == 0)): # // TO DO 
                 parent1 = intra_chromosome_crossover(parent1, n_features, n_hyperparameters)
 
             child1, child2 = inter_chromosome_crossover(parent1, parent2, n_features, n_hyperparameters)
 
             # Calculate increment
-            increment = 100 * mutation_rate[generation+1] / (fg[-1] - fg[-2]) # TO DO + ???
+            if len(fg) >= 2 and (fg[-1] - fg[-2]) != 0:
+                increment = 100 * mutation_rate[generation] / (fg[-1] - fg[-2]) # TO DO
+            else:
+                increment = 0
 
             if increment > 0:
-                mutation_rate[generation+1] += increment
+                mg = mutation_rate[generation] + increment
             else:
-                mutation_rate[generation+1] -= increment
+                mg = mutation_rate[generation] - increment
 
-            mutation_rate[generation+1] = mutation_rate[generation] if (mutation_rate[generation+1]>=1) or (mutation_rate[generation+1]<=0) else mutation_rate[generation+1]
+            if (mg>=1) or (mg<=0):
+                mg = mutation_rate[generation]
 
-            next_population.append(mutation(child1, mutation_rate))
-            next_population.append(mutation(child2, mutation_rate))
+            mutation_rate.append(mg)
+
+            next_population.append(mutation(child1, mg))
+            next_population.append(mutation(child2, mg))
 
         # Replace the old population with the new one, preserving the best individual
         next_population[0] = best_individual
@@ -171,15 +190,15 @@ def genetic_algorithm(population_size, generations, mutation_rate, n_features, n
 
     # Plot the population of one generation (last generation)
     final_population = all_populations[-1]
-    final_fitnesses = [fitness_function(ind) for ind in final_population]
+    final_fitnesses = [fitness_function(ind, trainer, data_module, model) for ind in final_population]
 
     # Plot the values of a, b, and c over generations
     generations_list = range(1, len(best_performers) + 1)
 
     # Plot the fitness values over generations
     best_fitness_values = [fit[1] for fit in best_performers]
-    min_fitness_values = [min([fitness_function(ind) for ind in population]) for population in all_populations]
-    max_fitness_values = [max([fitness_function(ind) for ind in population]) for population in all_populations]
+    min_fitness_values = [min([fitness_function(ind, trainer, data_module, model) for ind in population]) for population in all_populations]
+    max_fitness_values = [max([fitness_function(ind, trainer, data_module, model) for ind in population]) for population in all_populations]
     fig, ax = plt.subplots()
     ax.plot(generations_list, best_fitness_values, label='Best Fitness', color='black')
     ax.fill_between(generations_list, min_fitness_values, max_fitness_values, color='gray', alpha=0.5, label='Fitness Range')
@@ -187,8 +206,7 @@ def genetic_algorithm(population_size, generations, mutation_rate, n_features, n
     ax.set_ylabel('Fitness')
     ax.set_title('Fitness Over Generations')
     ax.legend()
-
-    plt.show()
+    plt.savefig('plots/GA.png')
 
     return max(population, key=fitness_function)
 

@@ -96,7 +96,9 @@ class DenseRMoK(nn.Module):
         super(DenseRMoK, self).__init__()
         self.hist_len = hist_len
         self.pred_len = pred_len
-        self.var_num = var_num
+        #self.features_mask = features_mask
+        self.var_num = var_num 
+        #self.var_num = var_num if features_mask==[] else sum(features_mask)
         self.num_experts = num_experts
         self.drop = drop
         self.revin_affine = revin_affine
