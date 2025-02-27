@@ -92,24 +92,34 @@ class RevIN(nn.Module):
 
 
 class DenseRMoK(nn.Module):
-    def __init__(self, hist_len, pred_len, var_num, num_experts=2, drop=0.1, revin_affine=True):
+    def __init__(self, hist_len, pred_len, var_num, KAN_experts_list_01, drop, revin_affine):
         super(DenseRMoK, self).__init__()
         self.hist_len = hist_len
         self.pred_len = pred_len
-        #self.features_mask = features_mask
         self.var_num = var_num 
-        #self.var_num = var_num if features_mask==[] else sum(features_mask)
-        self.num_experts = num_experts
+        self.num_experts_selected = sum(KAN_experts_list_01)
+        self.KAN_experts_list_01 = KAN_experts_list_01
         self.drop = drop
         self.revin_affine = revin_affine
 
-        #self.gate = nn.Linear(hist_len, num_experts)
-        # Modified code
-        self.gate = nn.Linear(hist_len, num_experts)
-
+        self.gate = nn.Linear(self.hist_len, self.num_experts_selected)
         self.softmax = nn.Softmax(dim=-1)
-        # # Original Module combination
-        self.experts = nn.ModuleList([
+
+        self.experts = nn.ModuleList([])
+        if self.KAN_experts_list_01[0]:
+            self.experts.append(TaylorKANLayer(self.hist_len, self.pred_len, order=3, addbias=True))
+        if self.KAN_experts_list_01[1]:
+            self.experts.append(WaveKANLayer(self.hist_len, self.pred_len, wavelet_type="mexican_hat", device="cuda"))
+        if self.KAN_experts_list_01[2]:
+            self.experts.append(JacobiKANLayer(self.hist_len, self.pred_len, degree=5))
+        if self.KAN_experts_list_01[3]:
+            self.experts.append(ChebyKANLayer(self.hist_len, self.pred_len, degree=4))
+        if self.KAN_experts_list_01[4]:
+            self.experts.append(RBFKANLayer(self.hist_len, self.pred_len, num_centers=10))
+        if self.KAN_experts_list_01[5]:
+            self.experts.append(NaiveFourierKANLayer(self.hist_len, self.pred_len, gridsize=300))
+
+        '''
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
@@ -126,6 +136,7 @@ class DenseRMoK(nn.Module):
             #WaveKANLayer(hist_len, pred_len, wavelet_type="mexican_hat", device="cuda"),
             #WaveKANLayer(hist_len, pred_len, wavelet_type="mexican_hat", device="cuda"),
         ])
+        '''
 
         # Modified Module combination 1 - Not good performance
         # self.experts = nn.ModuleList([
@@ -167,37 +178,29 @@ class DenseRMoK(nn.Module):
         # ])
 
 
-        self.dropout = nn.Dropout(drop)
-        self.rev = RevIN(var_num, affine=revin_affine)
+        self.dropout = nn.Dropout(self.drop)
+        self.rev = RevIN(self.var_num, affine=self.revin_affine)
         # Modified code
         #self.rev_output = RevIN(num_features=1, affine=revin_affine)  # For output denormalization
 
         # FINAL LAYER: Map predictions from shape [B, pred_len, var_num] to [B, pred_len, 1] (closing price)
-        self.final_layer = nn.Linear(in_features=var_num, out_features=1)
+        self.final_layer = nn.Linear(in_features=self.var_num, out_features=1)
 
     def forward(self, var_x, marker_x):
-        #print("input paramter : ", var_x.shape)
+
         var_x = var_x[..., 0]  # x: [B, Li, N]
-        #print("input paramter : ", var_x.shape)
-
         B, L, N = var_x.shape
-
         var_x = self.rev(var_x, 'norm') if self.rev else var_x
-
         var_x = self.dropout(var_x).transpose(1, 2).reshape(B * N, L)
 
-        #print("input paramter : ", var_x.shape)
-
         score = F.softmax(self.gate(var_x), dim=-1)  # (BxN, E)
-
-
-        expert_outputs = torch.stack([self.experts[i](var_x) for i in range(self.num_experts)], dim=-1)  # (BxN, Lo, E)
+        
+        expert_outputs = torch.stack([self.experts[i](var_x) for i in range(self.num_experts_selected)], dim=-1)  # (BxN, Lo, E)
 
         prediction = torch.einsum("BLE,BE->BL", expert_outputs, score).reshape(B, N, -1).permute(0, 2, 1)
         prediction = self.final_layer(prediction)
 
         prediction = self.rev(prediction, 'denorm')
-        #print(prediction)
 
         # ---------- Confidence Estimation ----------
         # Compute variance among expert outputs along the expert dimension.

@@ -40,11 +40,6 @@ for ticker_symbol in ticker_symbols:
     
     stock_series.index = stock_series.index.tz_localize(None)  # Remove timezone
 
-    '''
-    # Calculate the Simple Moving Average (SMA) for each feature
-    for feature in ['Open', 'High', 'Low', 'Close', 'Volume']:
-        stock_series[feature] = stock_series[feature].rolling(window=window).mean()
-    '''
 
     # Rename columns to the desired format
     stock_data[ticker_symbol] = stock_series  # Store the smoothed data in the dictionary
@@ -258,12 +253,6 @@ for ticker_symbol in ticker_symbols:
     
     index_series.index = index_series.index.tz_localize(None)  # Remove timezone
 
-    '''
-    # Calculate the Simple Moving Average (SMA) for each feature
-    for feature in ['Open', 'High', 'Low', 'Close', 'Volume']:
-        index_series[feature] = index_series[feature].rolling(window=window).mean()
-    '''
-
     # Rename columns to the desired format
     index_data[ticker_symbol] = index_series  # Store the smoothed data in the dictionary
 
@@ -346,47 +335,10 @@ for stock in ticker_symbols:
 
     # Save the final combined data and normalized time markers
     np.savez(os.path.join(output_dir, f'feature.npz'), norm_var=combined_data.values, norm_time_marker=norm_time_marker)
-
-    # Verify shapes
+    '''
     print("Stock:", stock)
     print("Final combined data contains NaN?:", combined_data.isna().any().any())
     print("Final combined data shape:", combined_data.shape)  
-    print("norm_time_marker shape:", norm_time_marker.shape)
-    print(f"min shape: {min_val.shape} and max shape {max_val.shape}")
     print("Data successfully saved.")
     print("\n")
-
-
-# Template content
-template_content = """exp_conf = dict(
-    model_name="DenseRMoK",
-    dataset_name='{dataset}',     # Set to {dataset} to point to your new dataset
-
-    hist_len=60,
-    pred_len=1,
-
-    revin_affine=False,       # Retain other configurations as in ETTh1
-
-    lr=0.001,                 # Learning rate
-)
-"""
-
-# Directory for saving configuration files
-output_dir = 'config/reproduce_conf/RMoK'
-# Ensure the output directory exists
-os.makedirs(output_dir, exist_ok=True)
-
-def generate_config_files():
-    """Generates configuration files for each stock symbol."""
-
-    for symbol in ticker_symbols:
-        new_content = template_content.format(dataset=symbol)
-        new_file_name = os.path.join(output_dir, f"{symbol}_30for1.py")
-
-        with open(new_file_name, 'w') as new_file:
-            new_file.write(new_content)
-
-        print(f"Created configuration file: {new_file_name}")
-
-# Generate configuration files
-generate_config_files()
+    '''

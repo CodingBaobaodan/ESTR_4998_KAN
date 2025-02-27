@@ -2,22 +2,243 @@ import argparse
 import importlib
 import importlib.util
 import os
-import re
-import subprocess
+import math
 
 import lightning.pytorch as L
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import CSVLogger, WandbLogger
+from lightning.pytorch.callbacks import Callback
 
 from core.data_runner import DataInterface
 from core.ltsf_runner import LTSFRunner
 from core.util import cal_conf_hash
-from core.util import load_module_from_path
 
-from genetic import genetic_algorithm
 
-# Modified Code to invoke call back to print the loss per epoch
-from lightning.pytorch.callbacks import Callback
+import random
+from prettytable import PrettyTable
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+seed_value = 4998
+random.seed(seed_value)
+
+# Define a basic structure for Chromosome and Population
+class Chromosome:
+    def __init__(self, features, hyperparameters):
+        self.genes = {
+            'features': features,
+            'hyperparameters': hyperparameters,
+        }
+
+        self.fitness = 0
+
+def decode(ind):
+    indicators_list_01 = ind.genes['features']
+    var_num = sum(indicators_list_01)
+    
+    hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:5], ind.genes['hyperparameters'][5:]
+    hist_len = int("".join(map(str, hist_len_list_01)), 2)
+
+    return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
+
+def fitness_function(ind, training_conf, conf):
+    conf['var_num'], conf['indicators_list_01'], conf['hist_len'], conf['hist_len_list_01'], conf['args.KAN_experts_list_01'] = decode(ind)
+    print(f"{conf['var_num']} features are selected")
+    print(conf['indicators_list_01'])
+    print(f"window size: {conf['hist_len']}")
+    print(['hist_len_list_01'])
+    print("Experts T, W, J, C, R, N", conf['args.KAN_experts_list_01'])
+
+    trainer, data_module, model = train_init(training_conf, conf)
+    trainer, data_module, model = train_func(trainer, data_module, model)
+
+    test_loss = model.test_losses[-1]
+    ind.fitness = -1 * test_loss # min MSE == max -MSE 
+
+    print("Done fitness once")
+
+def create_initial_population(conf):
+    population = []
+
+    for _ in range(conf['population_size']):
+        # 5 (index) : ('^GSPC', 'Open')	('^GSPC', 'High')	('^GSPC', 'Low')	('^GSPC', 'Close')	('^GSPC', 'Volume')	
+        # 31 (technical indicators) : Bollinger_Bands_Upper	Bollinger_Bands_Middle	Bollinger_Bands_Lower	DEMA	Midpoint	Midpoint_Price	T3_Moving_Average	ADX	Absolute_Price_Oscillator	Aroon_Up	Aroon_Down	Aroon_Oscillator	Balance_of_Power	CCI	Chande_Momentum_Oscillator	MACD	MACD_Signal	MACD_Histogram	Money_Flow_Index	Normalized_Average_True_Range	Chaikin_A/D_Line	Chaikin_A/D_Oscillator	Median_Price	Typical_Price	Weighted_Closing_Price	Hilbert_Dominant_Cycle_Phase	Hilbert_Phasor_Components_Inphase	Hilbert_Phasor_Components_Quadrature	Hilbert_SineWave	Hilbert_LeadSineWave	Hilbert_Trend_vs_Cycle_Mode	
+        # 5( stock) : Open	High	Low	Close	Volume	 # TO DO ???
+        # 9 (macro indicators) : M2	S&P CoreLogic Case-Shiller U.S. National Home Price Index	All-Transactions House Price Index for the United States	M1	Consumer Price Index for All Urban Consumers: All Items in U.S. City Average	Trade Balance: Goods and Services, Balance of Payments Basis	New Privately-Owned Housing Units Started: Total Units	Domestic Auto Production	New One Family Houses Sold
+
+        features = [random.choice([0, 1]) for _ in range(conf['total_n_features'])]
+
+        hist_len_list_01 = [random.choice([0, 1]) for _ in range(conf['max_hist_len_n_bit'])] 
+        KAN_experts_list_01 = [random.choice([0, 1]) for _ in range(conf['n_KAN_experts'])] 
+        hyperparameters = hist_len_list_01 + KAN_experts_list_01
+
+        population.append(Chromosome(features, hyperparameters))
+
+    return population
+
+
+def selection(population, all_fitnesses, tournament_size=3):
+    selected = []
+    for _ in range(len(population)):
+        tournament = random.sample(list(zip(population, all_fitnesses)), tournament_size)
+        winner = max(tournament, key=lambda x: x[1])[0]
+        selected.append(winner)
+    return selected
+
+
+def intra_chromosome_crossover(ch1, n_features, n_hyperparameters):
+    n = min(n_features, n_hyperparameters)
+
+    features_filter = [1] * n + [0] * (n_features - n)
+    random.shuffle(features_filter)
+
+    selected_indices = [i for i, val in enumerate(features_filter) if val == 1]
+    not_selected_index = [i for i in range(n)]
+
+    # Swap the selected pairs
+    for idx in selected_indices:
+        swap_index = random.sample(not_selected_index, 1)[0]
+        not_selected_index.remove(swap_index)
+        ch1.genes['features'][idx], ch1.genes['hyperparameters'][swap_index] = ch1.genes['hyperparameters'][swap_index], ch1.genes['features'][idx]
+    
+    return ch1
+
+
+def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters):
+
+    features1 = ch1.genes['features']
+    hyperparameters1 = ch1.genes['hyperparameters']
+    
+    features2 = ch2.genes['features']
+    hyperparameters2 = ch2.genes['hyperparameters']
+    
+    crossover_point1 = random.randint(0, n_features - 1)
+    crossover_point2 = random.randint(0, n_hyperparameters - 1)
+    
+    features1[crossover_point1:], features2[crossover_point1:] = features2[crossover_point1:], features1[crossover_point1:]
+    hyperparameters1[crossover_point2:], hyperparameters2[crossover_point2:] = hyperparameters2[crossover_point2:], hyperparameters1[crossover_point2:]
+    
+    ch1.genes['features'] = features1
+    ch1.genes['hyperparameters'] = hyperparameters1
+    
+    ch2.genes['features'] = features2
+    ch2.genes['hyperparameters'] = hyperparameters2
+    
+    return ch1, ch2
+
+
+def mutation(chromosome, mutation_rate):
+    # Mutate features
+    chromosome.genes['features'] = [
+        abs(gene - 1) if random.random() < mutation_rate else gene
+        for gene in chromosome.genes['features']
+    ]
+
+    # Mutate hyperparameters
+    chromosome.genes['hyperparameters'] = [
+        abs(gene - 1) if random.random() < mutation_rate else gene
+        for gene in chromosome.genes['hyperparameters']
+    ]
+
+    return chromosome
+
+
+def genetic_algorithm(training_conf, conf):
+    population = create_initial_population(conf)    
+    best_performers = []
+    all_populations = []
+
+    # Initialize mutation_rate and fg lists with initial values
+    fg = [0] # // TO DO 
+    mutation_rate = [0.1]
+
+    # Prepare for table
+    table = PrettyTable()
+    table.field_names = ["Generation", "Features", "Hyperparameters", "Fitness"]
+
+    for generation in range(conf['total_generations']):
+
+        _ = [fitness_function(ind, training_conf, conf) for ind in population]
+
+        # Store the best performer of the current generation
+        best_individual = max(population, key=lambda ch: ch.fitness)
+        best_performers.append((best_individual, best_individual.fitness))
+        all_populations.append(population[:])
+        table.add_row([generation + 1, "".join(map(str, best_individual.genes['features'])), "".join(map(str, best_individual.genes['hyperparameters'])), best_individual.fitness])
+
+        all_fitnesses = [ch.fitness for ch in population]
+        population = selection(population, all_fitnesses)
+
+        next_population = []
+        for i in range(0, len(population)-1, 2):
+            parent1 = population[i]
+            parent2 = population[i + 1]
+
+            if (generation == (conf['total_generations']//2)): #or ((len(fg) >= 2) and ((fg[-1]-fg[-2]) == 0)): # // TO DO 
+                parent1 = intra_chromosome_crossover(parent1, conf['total_n_features'], conf['n_hyperparameters'])
+
+            child1, child2 = inter_chromosome_crossover(parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'])
+
+            # Calculate increment
+            if len(fg) >= 2 and (fg[-1] - fg[-2]) != 0:
+                increment = 100 * mutation_rate[generation] / (fg[-1] - fg[-2]) # TO DO
+            else:
+                increment = 0
+
+            if increment > 0:
+                mg = mutation_rate[generation] + increment
+            else:
+                mg = mutation_rate[generation] - increment
+
+            if (mg>=1) or (mg<=0):
+                mg = mutation_rate[generation]
+
+            mutation_rate.append(mg)
+
+            next_population.append(mutation(child1, mg))
+            next_population.append(mutation(child2, mg))
+
+        # Replace the old population with the new one, preserving the best individual
+        next_population[0] = best_individual
+        population = next_population
+        fg.append(best_individual.fitness)
+
+        print(f"That is all for Generation {generation+1} for stock {conf['dataset_name']}")
+
+    # Print the table
+    print(table)
+
+    # Plot the population of one generation (last generation)
+    #final_population = all_populations[-1]
+    #final_fitnesses = [fitness_function(ind, training_conf, conf) for ind in final_population]
+
+    '''
+    # Plot the values of a, b, and c over generations
+    generations_list = range(1, len(best_performers) + 1)
+
+    # Plot the fitness values over generations
+    best_fitness_values = [fit[1] for fit in best_performers]
+    min_fitness_values = [min([fitness_function(ind, training_conf, conf) for ind in population]) for population in all_populations]
+    max_fitness_values = [max([fitness_function(ind, training_conf, conf) for ind in population]) for population in all_populations]
+    fig, ax = plt.subplots()
+    ax.plot(generations_list, best_fitness_values, label='Best Fitness', color='black')
+    ax.fill_between(generations_list, min_fitness_values, max_fitness_values, color='gray', alpha=0.5, label='Fitness Range')
+    ax.set_xlabel('Generation')
+    ax.set_ylabel('Fitness')
+    ax.set_title('Fitness Over Generations')
+    ax.legend()
+    plt.savefig('plots/GA.png')
+    '''
+
+    best_ch = max(population, key=lambda ch: ch.fitness) 
+    var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01 = decode(best_ch)
+
+    return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
+
+
+
+
 class TrainLossLoggerCallback(Callback):
     def __init__(self):
         super().__init__()
@@ -36,40 +257,12 @@ class TrainLossLoggerCallback(Callback):
             # Print the average loss for the epoch
             print(f"Epoch {trainer.current_epoch + 1}: Average Train Loss = {avg_loss.item():.4f}")
 
-    def on_train_end(self, trainer, pl_module):
-        """
-        Called at the end of training.
-        Prints the list of average training losses per epoch.
-        """
-        print("\nTraining Loss per Epoch:")
-        for epoch, loss in enumerate(self.train_losses, 1):
-            print(f"Epoch {epoch}: {loss:.4f}")
-
-
-def load_config(exp_conf_path):
-    # 加载 exp_conf
-    exp_conf = load_module_from_path("exp_conf", exp_conf_path).exp_conf
-
-    # 加载 task_conf
-    task_conf_module = importlib.import_module('config.base_conf.task')
-    task_conf = task_conf_module.task_conf
-
-    # 加载 data_conf
-    data_conf_module = importlib.import_module('config.base_conf.datasets')
-    data_conf = eval('data_conf_module.{}_conf'.format(exp_conf['dataset_name']))
-
-    # conf 融合，参数优先级: exp_conf > task_conf = data_conf
-    fused_conf = {**task_conf, **data_conf}
-    fused_conf.update(exp_conf)
-
-    return fused_conf
-
-
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
         for k, v in hyper_conf.items():
             conf[k] = v
     conf['conf_hash'] = cal_conf_hash(conf, hash_len=10)
+
 
     L.seed_everything(conf["seed"])
     save_dir = os.path.join(conf["save_root"], '{}_{}'.format(conf["model_name"], conf["dataset_name"]))
@@ -120,7 +313,10 @@ def train_func(trainer, data_module, model):
     #trainer.test(model, datamodule=data_module, ckpt_path='best')
     trainer.test(model, datamodule=data_module)
 
-    model.plot_losses()
+    model.train_plot_losses()
+    model.test_plot_losses()
+
+    return trainer, data_module, model
 
 
 
@@ -128,55 +324,81 @@ ticker_symbols = ['AAPL']
 #, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'WDC']
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", type=str)
     parser.add_argument("-d", "--data_root", default="dataset", type=str, help="data root")
-    parser.add_argument("-s", "--save_root", default="save", help="save root")
+    parser.add_argument("-s", "--save_root", default="save", type=str, help="save root")
     parser.add_argument("--devices", default='0,', type=str, help="device' id to use")
     parser.add_argument("--use_wandb", default=0, type=int, help="use wandb")
     parser.add_argument("--seed", type=int, default=1, help="seed")
+    parser.add_argument("--model_name", default="DenseRMoK", type=str, help="Model name")
+    parser.add_argument("--revin_affine", default=False, type=bool, help="Use revin affine")
+
+    parser.add_argument("--lr", default=0.001, type=float, help="Learning rate")
+    parser.add_argument("--batch_size", default=20, type=int, help="Batch size")
+    parser.add_argument("--max_epochs", default=20, type=int, help="Maximum number of epochs")
+    parser.add_argument("--optimizer", default="AdamW", type=str, help="Optimizer type")
+    parser.add_argument("--optimizer_betas", default=(0.95, 0.9), type=eval, help="Optimizer betas")
+    parser.add_argument("--optimizer_weight_decay", default=1e-5, type=float, help="Optimizer weight decay")
+    parser.add_argument("--lr_scheduler", default='StepLR', type=str, help="Learning rate scheduler")
+    parser.add_argument("--lr_step_size", default=5, type=int, help="Learning rate step size")
+    parser.add_argument("--lr_gamma", default=0.5, type=float, help="Learning rate gamma")
+    parser.add_argument("--gradient_clip_val", default=5, type=float, help="Gradient clipping value")
+    parser.add_argument("--val_metric", default="val/loss", type=str, help="Validation metric")
+    parser.add_argument("--test_metric", default="test/mae", type=str, help="Test metric")
+    parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience")
+    parser.add_argument("--num_workers", default=10, type=int, help="Number of workers for data loading")
+
+    parser.add_argument("--population_size", default=10, type=int, help="Population Size for GA")
+    parser.add_argument("--total_generations", default=2, type=int, help="Total number of generations for GA")
+    parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA")
+    parser.add_argument("--max_hist_len", default=128, type=int, help="Maximum window size allowed")
+    parser.add_argument("--n_KAN_experts", default=6, type=int, help="Number of KAN experts to be used")
+
+    parser.add_argument("--drop", default=0.1, type=float, help="Dropout rate for mixture of KAN")
+
+    parser.add_argument("--pred_len", default=1, type=int, help="Number of predicted made each time (should be fixed)")
+    parser.add_argument("--data_split", default=[2000, 0, 500], type=list, help="Train-Val-Test Ratio (Val should be fixed to 0)")
+    parser.add_argument("--freq", default=1440, type=int, help="(should be fixed)")
+
     args = parser.parse_args()
 
+    args.max_hist_len_n_bit = math.floor(math.log2(args.max_hist_len))
+    args.n_hyperparameters = args.max_hist_len_n_bit + args.n_KAN_experts
+    
     for symbol in ticker_symbols:
-        
-        # Using regular expressions to match the pattern _{int}for{int}.py
-        pattern = re.compile(rf"{symbol}_(\d+)for(\d+)\.py")
-        matching_files = [config_file for config_file in os.listdir("config/reproduce_conf/RMoK/") if pattern.match(config_file)]
-        
-        if matching_files:
-            args.config = f"config/reproduce_conf/RMoK/{matching_files[0]}"
-        else:
-            print(f"No matching config file found for {symbol}.")
+        # Before GA
+        args.dataset_name = symbol
 
-        init_exp_conf = load_config(args.config)
-        
+        args.var_num = 50
+        args.indicators_list_01 = [1 for i in range(args.total_n_features)]
+
+        args.hist_len = 64
+        args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
+
+        args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] # Ordering: T, W, J, C, R, N
+
         training_conf = {
             "seed": int(args.seed),
             "data_root": f"dataset/{symbol}",
             "save_root": args.save_root,
             "devices": args.devices,
             "use_wandb": args.use_wandb
-            #, "features_mask":[]
         }
 
-        ''' # TO DO ///
-        trainer, data_module, model = train_init(training_conf, init_exp_conf)
+        # GA
+        print(f"For stock {symbol}:")
+        print("Doing GA")
+        args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
-        # Run the genetic algorithm
-        population_size = 10
-        total_generations = 10
-        n_features = 50
-        n_hyperparameters = 11
+        print("After GA: ")
+        print(args.var_num)
+        print(args.indicators_list_01)
+        print(args.hist_len)
+        print(args.hist_len_list_01)
+        print(args.KAN_experts_list_01)
 
-        best_solution = genetic_algorithm(population_size, total_generations, n_features, n_hyperparameters, trainer, data_module, model)
-        print("Best Solution found:", best_solution)
-
-        training_conf["features_mask"] = best_solution.genes["features"]
-        print(training_conf["features_mask"])
-        trainer, data_module, model = train_init(training_conf, init_exp_conf)
-        train_func(trainer, data_module, model)
-        '''
-        
-        trainer, data_module, model = train_init(training_conf, init_exp_conf) # Train final optimal model
-        train_func(trainer, data_module, model)
-        
+        print("Optimal model is finally trained below: ")
+        trainer, data_module, model = train_init(training_conf, vars(args))
+        trainer, data_module, model = train_func(trainer, data_module, model)
+        print("\n")
