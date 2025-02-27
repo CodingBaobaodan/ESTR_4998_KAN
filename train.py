@@ -33,21 +33,22 @@ class Chromosome:
 
         self.fitness = 0
 
-def decode(ind):
+def decode(ind, conf):
     indicators_list_01 = ind.genes['features']
     var_num = sum(indicators_list_01)
     
-    hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:5], ind.genes['hyperparameters'][5:]
+    hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']], ind.genes['hyperparameters'][conf['max_hist_len_n_bit']:]
     hist_len = int("".join(map(str, hist_len_list_01)), 2)
 
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
 
 def fitness_function(ind, training_conf, conf):
-    conf['var_num'], conf['indicators_list_01'], conf['hist_len'], conf['hist_len_list_01'], conf['args.KAN_experts_list_01'] = decode(ind)
+    conf['var_num'], conf['indicators_list_01'], conf['hist_len'], conf['hist_len_list_01'], conf['args.KAN_experts_list_01'] = decode(ind, conf)
     print(f"{conf['var_num']} features are selected")
     print(conf['indicators_list_01'])
     print(f"window size: {conf['hist_len']}")
-    print(['hist_len_list_01'])
+    print(conf['hist_len_list_01'])
+
     print("Experts T, W, J, C, R, N", conf['args.KAN_experts_list_01'])
 
     trainer, data_module, model = train_init(training_conf, conf)
@@ -68,6 +69,7 @@ def create_initial_population(conf):
         # 9 (macro indicators) : M2	S&P CoreLogic Case-Shiller U.S. National Home Price Index	All-Transactions House Price Index for the United States	M1	Consumer Price Index for All Urban Consumers: All Items in U.S. City Average	Trade Balance: Goods and Services, Balance of Payments Basis	New Privately-Owned Housing Units Started: Total Units	Domestic Auto Production	New One Family Houses Sold
 
         features = [random.choice([0, 1]) for _ in range(conf['total_n_features'])]
+        features[conf['total_n_features']-14:conf['total_n_features']-14+5] = [1, 1, 1, 1, 1] # TO DO ///
 
         hist_len_list_01 = [random.choice([0, 1]) for _ in range(conf['max_hist_len_n_bit'])] 
         KAN_experts_list_01 = [random.choice([0, 1]) for _ in range(conf['n_KAN_experts'])] 
@@ -102,6 +104,7 @@ def intra_chromosome_crossover(ch1, n_features, n_hyperparameters):
         not_selected_index.remove(swap_index)
         ch1.genes['features'][idx], ch1.genes['hyperparameters'][swap_index] = ch1.genes['hyperparameters'][swap_index], ch1.genes['features'][idx]
     
+    ch1.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] # TO DO ///
     return ch1
 
 
@@ -124,11 +127,14 @@ def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters):
     
     ch2.genes['features'] = features2
     ch2.genes['hyperparameters'] = hyperparameters2
+
+    ch1.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] # TO DO ///
+    ch2.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] # TO DO ///
     
     return ch1, ch2
 
 
-def mutation(chromosome, mutation_rate):
+def mutation(chromosome, mutation_rate, n_features):
     # Mutate features
     chromosome.genes['features'] = [
         abs(gene - 1) if random.random() < mutation_rate else gene
@@ -141,6 +147,7 @@ def mutation(chromosome, mutation_rate):
         for gene in chromosome.genes['hyperparameters']
     ]
 
+    chromosome.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] # TO DO ///
     return chromosome
 
 
@@ -196,8 +203,8 @@ def genetic_algorithm(training_conf, conf):
 
             mutation_rate.append(mg)
 
-            next_population.append(mutation(child1, mg))
-            next_population.append(mutation(child2, mg))
+            next_population.append(mutation(child1, mg, conf['total_n_features']))
+            next_population.append(mutation(child2, mg, conf['total_n_features']))
 
         # Replace the old population with the new one, preserving the best individual
         next_population[0] = best_individual
@@ -232,7 +239,7 @@ def genetic_algorithm(training_conf, conf):
     '''
 
     best_ch = max(population, key=lambda ch: ch.fitness) 
-    var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01 = decode(best_ch)
+    var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01 = decode(best_ch, conf)
 
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
 
@@ -373,7 +380,7 @@ if __name__ == '__main__':
         args.var_num = 50
         args.indicators_list_01 = [1 for i in range(args.total_n_features)]
 
-        args.hist_len = 64
+        args.hist_len = 128
         args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
 
         args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] # Ordering: T, W, J, C, R, N
