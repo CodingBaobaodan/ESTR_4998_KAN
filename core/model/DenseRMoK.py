@@ -8,7 +8,7 @@ from core.layer.embedding import PatchEmbedding
 
 
 class RevIN(nn.Module):
-    def __init__(self, num_features: int, eps=1e-5, affine=True):
+    def __init__(self, num_features: int, eps=1e-5, affine=False):
         """
         :param num_features: the number of features or channels
         :param eps: a value added for numerical stability
