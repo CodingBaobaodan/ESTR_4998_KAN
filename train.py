@@ -182,15 +182,16 @@ def genetic_algorithm(training_conf, conf):
             parent1 = population[i]
             parent2 = population[i + 1]
 
-            if (generation == (conf['total_generations']//2)): #or ((len(fg) >= 2) and ((fg[-1]-fg[-2]) == 0)): # // TO DO 
+            if (generation == (conf['total_generations']//2)): #or ((len(fg) >= 2) and (abs(fg[-1]-fg[-2]) >= 1e-5)): # // TO DO 
                 parent1 = intra_chromosome_crossover(parent1, conf['total_n_features'], conf['n_hyperparameters'])
 
             child1, child2 = inter_chromosome_crossover(parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'])
 
             # Calculate increment
-            if len(fg) >= 2 and (fg[-1] - fg[-2]) != 0:
-                increment = 100 * mutation_rate[generation] / (fg[-1] - fg[-2]) # TO DO
-            else:
+            # // TO DO if len(fg) >= 2 and (fg[-1] - fg[-2]) != 0:
+                # // TO DO increment = 100 * mutation_rate[generation] / (fg[-1] - fg[-2]) # TO DO
+            # // TO DO else:
+            if True:
                 increment = 0
 
             if increment > 0:
@@ -341,9 +342,9 @@ if __name__ == '__main__':
     parser.add_argument("--model_name", default="DenseRMoK", type=str, help="Model name")
     parser.add_argument("--revin_affine", default=False, type=bool, help="Use revin affine")
 
-    parser.add_argument("--lr", default=0.001, type=float, help="Learning rate")
-    parser.add_argument("--batch_size", default=20, type=int, help="Batch size")
-    parser.add_argument("--max_epochs", default=20, type=int, help="Maximum number of epochs")
+    parser.add_argument("--lr", default=0.0001, type=float, help="Learning rate")
+    parser.add_argument("--batch_size", default=32, type=int, help="Batch size")
+    parser.add_argument("--max_epochs", default=32, type=int, help="Maximum number of epochs")
     parser.add_argument("--optimizer", default="AdamW", type=str, help="Optimizer type")
     parser.add_argument("--optimizer_betas", default=(0.95, 0.9), type=eval, help="Optimizer betas")
     parser.add_argument("--optimizer_weight_decay", default=1e-5, type=float, help="Optimizer weight decay")
@@ -359,7 +360,7 @@ if __name__ == '__main__':
     parser.add_argument("--population_size", default=10, type=int, help="Population Size for GA")
     parser.add_argument("--total_generations", default=2, type=int, help="Total number of generations for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA")
-    parser.add_argument("--max_hist_len", default=128, type=int, help="Maximum window size allowed")
+    parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
     parser.add_argument("--n_KAN_experts", default=6, type=int, help="Number of KAN experts to be used")
 
     parser.add_argument("--drop", default=0.1, type=float, help="Dropout rate for mixture of KAN")
