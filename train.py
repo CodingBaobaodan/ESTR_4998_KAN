@@ -342,7 +342,7 @@ if __name__ == '__main__':
     parser.add_argument("--model_name", default="DenseRMoK", type=str, help="Model name")
     parser.add_argument("--revin_affine", default=False, type=bool, help="Use revin affine")
 
-    parser.add_argument("--lr", default=0.0001, type=float, help="Learning rate")
+    parser.add_argument("--lr", default=0.001, type=float, help="Learning rate")
     parser.add_argument("--batch_size", default=32, type=int, help="Batch size")
     parser.add_argument("--max_epochs", default=32, type=int, help="Maximum number of epochs")
     parser.add_argument("--optimizer", default="AdamW", type=str, help="Optimizer type")
