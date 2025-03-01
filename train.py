@@ -96,7 +96,6 @@ def train_init(hyper_conf, conf):
         TrainLossLoggerCallback(), # Modified Code to invoke call back to print the loss per epoch
     ]
 
-
     trainer = L.Trainer(
         devices=conf["devices"],
         precision=conf["precision"] if "precision" in conf else "32-true",
