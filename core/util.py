@@ -20,13 +20,6 @@ def cal_conf_hash(config, useless_key=None, hash_len=10):
     return md5.hexdigest()[:hash_len]
 
 
-def load_module_from_path(module_name, exp_conf_path):
-    spec = importlib.util.spec_from_file_location(module_name, exp_conf_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
 # Plot the data, red dot means wrong direction prediction.
 def plot_confidence_vs_loss(confidences, custom_losses, predictions_tomorrow, true_prices_tomorrow, true_prices_today):
     # Convert lists to NumPy arrays for element-wise operations

@@ -65,8 +65,6 @@ def cap_weighted_correlation_plots(composite_index_df, macro_df, k):
     plt.savefig(f"{output_dir}/cap_weighted_correlation_plot.png")
     plt.close()
 
-    print(f"Plot saved in the directory: {output_dir}/cap_weighted_correlation_plot.png")   
-
     # Set output directory for CSV
     output_dir = 'csv'
     correlation_df.to_csv(f"{output_dir}/cap_weighted_correlation_df.csv", index=True)

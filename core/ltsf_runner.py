@@ -19,13 +19,13 @@ class LTSFRunner(L.LightningModule):
         self.load_model()
         self.configure_loss()
 
-        # Load the scaler info which should include 'min' and 'max'
-        #stat = np.load(os.path.join(self.hparams.data_root, self.hparams.dataset_name, 'var_scaler_info.npz'))
-        stat = np.load(os.path.join(self.hparams.data_root, 'var_scaler_info.npz'))
+        self.indicators_bool = kargs['indicators_list_01']
+        self.dataset_name = kargs['dataset_name']
 
-        # Assuming 'min' and 'max' are stored in the file instead of 'mean' and 'std'
-        self.register_buffer('min', torch.tensor(stat['min']).float())
-        self.register_buffer('max', torch.tensor(stat['max']).float())
+        # Load the scaler info which should include 'min' and 'max'
+        stat = np.load(os.path.join(self.hparams.data_root, 'var_scaler_info.npz'))
+        self.register_buffer('min', torch.tensor(stat['min'][np.array(self.indicators_bool).astype(bool)]).float())
+        self.register_buffer('max', torch.tensor(stat['max'][np.array(self.indicators_bool).astype(bool)]).float())
 
         # Use the closing price channel (index 3) for output de-normalization.
         # close_index = 3  # Index of Close price in OHLC
@@ -35,6 +35,7 @@ class LTSFRunner(L.LightningModule):
 
         # To record the train and val loss for each epoch 
         self.train_losses = []
+        self.test_losses = []
 
     def evaluate_trading_strategy(self, predictions_tomorrow, true_prices_tomorrow, true_prices_today):
         """
@@ -128,6 +129,7 @@ class LTSFRunner(L.LightningModule):
     def training_step(self, batch, batch_idx):
         loss = self.loss_function(*self.forward(batch, batch_idx))
         self.log('train/loss', loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.train_losses.append(loss.item())
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -142,6 +144,7 @@ class LTSFRunner(L.LightningModule):
         mae = torch.nn.functional.l1_loss(prediction, label)
         mse = torch.nn.functional.mse_loss(prediction, label)
         custom_loss = self.loss_function(prediction, label, true_price_today, confidence)
+        self.test_losses.append(custom_loss.item())
         mean_error_percentage = torch.mean(torch.abs((label - prediction) / label) * 100)
         self.log('test/mae', mae, on_step=False, on_epoch=True, sync_dist=True)
         self.log('test/mse', mse, on_step=False, on_epoch=True, sync_dist=True)
@@ -167,6 +170,7 @@ class LTSFRunner(L.LightningModule):
         self.true_prices_today.append(true_price_today)
         self.confidences.append(confidence_score)
         self.custom_losses.append(custom_loss.item())
+
 
 
     def configure_loss(self):
@@ -242,27 +246,26 @@ class LTSFRunner(L.LightningModule):
                 model_args_instance[arg] = getattr(self.hparams, arg)
         return Model(**model_args_instance)
 
-    def inverse_transform_var(self, data):
-        return (data * self.std) + self.mean
+    def train_plot_losses(self):
+        # Plot the loss values after training is complete
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, len(self.train_losses) + 1), self.train_losses, marker='o', label='Train Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Training Loss vs Epoch')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(f"plots/train_loss_{self.dataset_name}.png")
+        plt.close()
 
-    def inverse_transform_time_marker(self, time_marker):
-        time_marker[..., 0] = time_marker[..., 0] * (int((24 * 60) / self.hparams.freq - 1))
-        time_marker[..., 1] = time_marker[..., 1] * 6
-        time_marker[..., 2] = time_marker[..., 2] * 30
-        time_marker[..., 3] = time_marker[..., 3] * 365
-
-        if "max_event_per_day" in self.hparams:
-            time_marker[..., -1] = time_marker[..., -1] * self.hparams.max_event_per_day
-
-        return time_marker
-
-    # def plot_losses(self):
-    #     # Plot the loss values after training is complete
-    #     plt.figure(figsize=(10, 5))
-    #     plt.plot(range(1, len(self.train_losses) + 1), self.train_losses, marker='o', label='Train Loss')
-    #     plt.xlabel('Epoch')
-    #     plt.ylabel('Loss')
-    #     plt.title('Training Loss vs Epoch')
-    #     plt.legend()
-    #     plt.grid(True)
-    #     plt.show()
+    def test_plot_losses(self):
+        # Plot the loss values after training is complete
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, len(self.test_losses) + 1), self.test_losses, marker='o', label='Test Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Testing Loss vs Epoch')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(f"plots/test_loss_{self.dataset_name}.png")
+        plt.close()
