@@ -33,5 +33,23 @@ Note (24/02/2025)
 1. Using variance between model prediction to estimate the confidence does not work well.
 
 
-23/02/2025: include >=2 stocks, new command arguments without the need to give config and dataset 
-python3 ESTR_4998_KAN/train.py --devices 1
+done (08/03/2025):
+1. window size: +4 by stream of bits, min (4) and max (64) can be set in args.argument
+
+2. window size will no longer be 0, since min=4
+
+3. one KAN expert would be chosen randomly, in case [0, 0, 0, 0, 0, 0]
+
+4. at least OHLCV would be chosen in case [0 for all indicators]
+
+5. predicting closing price now
+
+6. solved bug: line 73, /core/ltsf_runner.py
+daily_return = profit / true_price_today  
+bug: float division by zero
+
+7. at each generation: table showing each chrosome, and how they perform
+
+8. at last generation: table showing best chromosome in each generations, and plot of fitness score vs generations
+
+

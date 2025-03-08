@@ -37,58 +37,35 @@ class RevIN(nn.Module):
         return x
 
     def _init_params(self):
-        # initialize RevIN params: (C,)
         self.affine_weight = nn.Parameter(torch.ones(self.num_features))
         self.affine_bias = nn.Parameter(torch.zeros(self.num_features))
 
     def _get_statistics(self, x):
         dim2reduce = tuple(range(1, x.ndim - 1))
-        # self.mean = torch.mean(x, dim=dim2reduce, keepdim=True).detach()
-        #self.stdev = torch.sqrt(torch.var(x, dim=dim2reduce, keepdim=True, unbiased=False) + self.eps).detach()
         self.min_val = torch.amin(x, dim=dim2reduce, keepdim=True).detach()
         self.max_val = torch.amax(x, dim=dim2reduce, keepdim=True).detach()
 
-    # Apply min–max normalization: (x – min) / (max – min)
     def _normalize(self, x):
-        # print(f"Normalize min_val shape: {self.min_val.shape} and max_val shape: {self.max_val.shape}")
-        # print(f"Normalize min_val value: \n {self.min_val}")
-        # print(f"Normalize max_val value: \n {self.max_val}")
         x = (x - self.min_val) / (self.max_val - self.min_val + self.eps)
         if self.affine:
             x = x * self.affine_weight + self.affine_bias
         return x
 
     def _denormalize(self, x):
-        # print(f"Denormalize min_val shape: {self.min_val.shape} and max_val shape: {self.max_val.shape}")
-        # print(f"Denormalize min_val value: \n {self.min_val}")
-        # print(f"Denormalize max_val value: \n {self.max_val}")
-
         # Select the statistics for closing price which is at index 3 in the input.
         min_target = self.min_val[..., 3:4]  # Keepdim so that shape broadcasting works.
         max_target = self.max_val[..., 3:4]
         if self.affine:
             x = (x - self.affine_bias) / (self.affine_weight + self.eps)
-        #x = x * (self.max_val - self.min_val + self.eps) + self.min_val
-        # Reverse the normalization: x = normalized_value * (max - min) + min.
+
         x = x * (max_target - min_target + self.eps) + min_target
         if x.shape[-1] > 1:
             x = x[..., 3:4]
         return x
         
-    
-    # Modified code
     def set_statistics(self, min_val, max_val):
-        """
-        Manually set the mean and standard deviation for denormalization.
-
-        Args:
-            mean (torch.Tensor): Mean tensor of shape [1, 1, 1].
-            stdev (torch.Tensor): Standard deviation tensor of shape [1, 1, 1].
-        """
         self.min_val = min_val
         self.max_val = max_val
-        #self.mean = mean
-        #self.stdev = stdev
 
 
 class DenseRMoK(nn.Module):
@@ -180,10 +157,6 @@ class DenseRMoK(nn.Module):
 
         self.dropout = nn.Dropout(self.drop)
         self.rev = RevIN(self.var_num, affine=self.revin_affine)
-        # Modified code
-        #self.rev_output = RevIN(num_features=1, affine=revin_affine)  # For output denormalization
-
-        # FINAL LAYER: Map predictions from shape [B, pred_len, var_num] to [B, pred_len, 1] (closing price)
         self.final_layer = nn.Linear(in_features=self.var_num, out_features=1)
 
     def forward(self, var_x, marker_x):
@@ -194,7 +167,6 @@ class DenseRMoK(nn.Module):
         var_x = self.dropout(var_x).transpose(1, 2).reshape(B * N, L)
 
         score = F.softmax(self.gate(var_x), dim=-1)  # (BxN, E)
-        
         expert_outputs = torch.stack([self.experts[i](var_x) for i in range(self.num_experts_selected)], dim=-1)  # (BxN, Lo, E)
 
         prediction = torch.einsum("BLE,BE->BL", expert_outputs, score).reshape(B, N, -1).permute(0, 2, 1)
