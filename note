@@ -53,3 +53,5 @@ bug: float division by zero
 8. at last generation: table showing best chromosome in each generations, and plot of fitness score vs generations
 
 
+done (11/03/2025):
+remove bug slicing column number 3 (closing price), to dynamically changing column number
