@@ -8,7 +8,7 @@ from core.layer.embedding import PatchEmbedding
 
 
 class RevIN(nn.Module):
-    def __init__(self, num_features: int, eps=1e-5, affine=False):
+    def __init__(self, indicators_bool, num_features: int, eps=1e-5, affine=False):
         """
         :param num_features: the number of features or channels
         :param eps: a value added for numerical stability
@@ -19,6 +19,7 @@ class RevIN(nn.Module):
         self.num_features = num_features
         self.eps = eps
         self.affine = affine
+        self.indicators_bool = indicators_bool
 
         if self.affine:
             self._init_params()
@@ -53,14 +54,14 @@ class RevIN(nn.Module):
 
     def _denormalize(self, x):
         # Select the statistics for closing price which is at index 3 in the input.
-        min_target = self.min_val[..., 3:4]  # Keepdim so that shape broadcasting works.
-        max_target = self.max_val[..., 3:4]
+        min_target = self.min_val[..., sum(self.indicators_bool[:-14])+4-1]  # Keepdim so that shape broadcasting works.
+        max_target = self.max_val[..., sum(self.indicators_bool[:-14])+4-1]
         if self.affine:
             x = (x - self.affine_bias) / (self.affine_weight + self.eps)
 
         x = x * (max_target - min_target + self.eps) + min_target
         if x.shape[-1] > 1:
-            x = x[..., 3:4]
+            x = x[..., sum(self.indicators_bool[:-14])+4-1]
         return x
         
     def set_statistics(self, min_val, max_val):
@@ -69,7 +70,7 @@ class RevIN(nn.Module):
 
 
 class DenseRMoK(nn.Module):
-    def __init__(self, hist_len, pred_len, var_num, KAN_experts_list_01, drop, revin_affine):
+    def __init__(self, hist_len, pred_len, var_num, KAN_experts_list_01, drop, revin_affine, indicators_bool):
         super(DenseRMoK, self).__init__()
         self.hist_len = hist_len
         self.pred_len = pred_len
@@ -78,6 +79,7 @@ class DenseRMoK(nn.Module):
         self.KAN_experts_list_01 = KAN_experts_list_01
         self.drop = drop
         self.revin_affine = revin_affine
+        self.indicators_bool = indicators_bool
 
         self.gate = nn.Linear(self.hist_len, self.num_experts_selected)
         self.softmax = nn.Softmax(dim=-1)
@@ -156,7 +158,7 @@ class DenseRMoK(nn.Module):
 
 
         self.dropout = nn.Dropout(self.drop)
-        self.rev = RevIN(self.var_num, affine=self.revin_affine)
+        self.rev = RevIN(self.indicators_bool, self.var_num, affine=self.revin_affine)
         self.final_layer = nn.Linear(in_features=self.var_num, out_features=1)
 
     def forward(self, var_x, marker_x):
