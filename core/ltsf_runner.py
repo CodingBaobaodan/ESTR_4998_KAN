@@ -108,7 +108,7 @@ class LTSFRunner(L.LightningModule):
             self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
 
             # Plot confidence vs loss
-            util.plot_confidence_vs_loss(self.confidences, self.custom_losses, self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
+            # util.plot_confidence_vs_loss(self.confidences, self.custom_losses, self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
             
     def forward(self, batch, batch_idx):
         var_x, marker_x, var_y, marker_y = [_.float() for _ in batch]

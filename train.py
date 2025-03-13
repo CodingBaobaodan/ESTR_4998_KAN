@@ -37,8 +37,11 @@ def decode(ind, conf):
     indicators_list_01 = ind.genes['features']
     var_num = sum(indicators_list_01)
     
-    hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']], ind.genes['hyperparameters'][conf['max_hist_len_n_bit']:]
-    hist_len = int("".join(map(str, hist_len_list_01)), 2)
+    # hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']], ind.genes['hyperparameters'][conf['max_hist_len_n_bit']:]
+    # hist_len = int("".join(map(str, hist_len_list_01)), 2)
+    KAN_experts_list_01 = [1,1,1,1,1,1]
+    hist_len_list_01 = [1,1,1,1,1]
+    hist_len = 32
 
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
 
@@ -310,6 +313,7 @@ def train_init(hyper_conf, conf):
         check_val_every_n_epoch=0, # No validation every n epoch
     )
 
+    print(conf)
     data_module = DataInterface(**conf)
     model = LTSFRunner(**conf)
 
@@ -342,7 +346,7 @@ if __name__ == '__main__':
     parser.add_argument("--revin_affine", default=False, type=bool, help="Use revin affine")
 
     parser.add_argument("--lr", default=0.001, type=float, help="Learning rate")
-    parser.add_argument("--batch_size", default=32, type=int, help="Batch size")
+    parser.add_argument("--batch_size", default=16, type=int, help="Batch size")
     parser.add_argument("--max_epochs", default=32, type=int, help="Maximum number of epochs")
     parser.add_argument("--optimizer", default="AdamW", type=str, help="Optimizer type")
     parser.add_argument("--optimizer_betas", default=(0.95, 0.9), type=eval, help="Optimizer betas")
@@ -354,18 +358,18 @@ if __name__ == '__main__':
     parser.add_argument("--val_metric", default="val/loss", type=str, help="Validation metric")
     parser.add_argument("--test_metric", default="test/mae", type=str, help="Test metric")
     parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience")
-    parser.add_argument("--num_workers", default=10, type=int, help="Number of workers for data loading")
+    parser.add_argument("--num_workers", default=1, type=int, help="Number of workers for data loading")
 
     parser.add_argument("--population_size", default=10, type=int, help="Population Size for GA")
     parser.add_argument("--total_generations", default=2, type=int, help="Total number of generations for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA")
-    parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
+    parser.add_argument("--max_hist_len", default=32, type=int, help="Maximum window size allowed")
     parser.add_argument("--n_KAN_experts", default=6, type=int, help="Number of KAN experts to be used")
 
     parser.add_argument("--drop", default=0.1, type=float, help="Dropout rate for mixture of KAN")
 
     parser.add_argument("--pred_len", default=1, type=int, help="Number of predicted made each time (should be fixed)")
-    parser.add_argument("--data_split", default=[2000, 0, 500], type=list, help="Train-Val-Test Ratio (Val should be fixed to 0)")
+    parser.add_argument("--data_split", default=[2000, 200, 500], type=list, help="Train-Val-Test Ratio (Val should be fixed to 0)")
     parser.add_argument("--freq", default=1440, type=int, help="(should be fixed)")
 
     args = parser.parse_args()

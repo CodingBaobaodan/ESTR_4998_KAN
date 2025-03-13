@@ -105,7 +105,13 @@ for ticker_symbol in ticker_symbols:
     stock_series['MACD'] = exp12 - exp26
     stock_series['MACD_Signal'] = stock_series['MACD'].ewm(span=9, adjust=False).mean()
     stock_series['MACD_Histogram'] = stock_series['MACD'] - stock_series['MACD_Signal']
-    stock_series['Money_Flow_Index'] = ta.volume.mfi(stock_series['High'], stock_series['Low'], stock_series['Close'], stock_series['Volume'], window=14)
+    stock_series['Money_Flow_Index'] = ta.volume.mfi(
+        stock_series['High'], 
+        stock_series['Low'], 
+        stock_series['Close'], 
+        stock_series['Volume'], 
+        window=14
+    ).astype('float64')
 
     # Category 3: Volatility Indicators
     def wwma(values, n):
