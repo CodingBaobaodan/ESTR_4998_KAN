@@ -22,18 +22,10 @@ class LTSFRunner(L.LightningModule):
         self.indicators_bool = kargs['indicators_list_01']
         self.dataset_name = kargs['dataset_name']
 
-        # Load the scaler info which should include 'min' and 'max'
         stat = np.load(os.path.join(self.hparams.data_root, 'var_scaler_info.npz'))
         self.register_buffer('min', torch.tensor(stat['min'][np.array(self.indicators_bool).astype(bool)]).float())
         self.register_buffer('max', torch.tensor(stat['max'][np.array(self.indicators_bool).astype(bool)]).float())
 
-        # Use the closing price channel (index 3) for output de-normalization.
-        # close_index = 3  # Index of Close price in OHLC
-        # min_close = self.min[close_index].view(1, 1, 1).cuda()   # Shape: [1, 1, 1]
-        # max_close = self.max[close_index].view(1, 1, 1).cuda()   # Shape: [1, 1, 1]
-        # self.model.rev_output.set_statistics(min_close, max_close)
-
-        # To record the train and val loss for each epoch 
         self.train_losses = []
         self.test_losses = []
 
@@ -94,9 +86,6 @@ class LTSFRunner(L.LightningModule):
         return evaluation_metrics
     
     def on_test_epoch_end(self):
-        """
-        After all test steps, evaluate the trading strategy using accumulated predictions and actual prices.
-        """
         if hasattr(self, 'predictions_tomorrow') and hasattr(self, 'true_prices_tomorrow') and hasattr(self, 'true_prices_today'):
             # Evaluate the trading strategy using the full predictions and actual prices
             evaluation_metrics = self.evaluate_trading_strategy(self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
@@ -111,20 +100,21 @@ class LTSFRunner(L.LightningModule):
             # util.plot_confidence_vs_loss(self.confidences, self.custom_losses, self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
             
     def forward(self, batch, batch_idx):
-        var_x, marker_x, var_y, marker_y = [_.float() for _ in batch]
+        var_x, marker_x, var_y, marker_y, true = [_.float() for _ in batch]
+
         # Extract label from var_y.
         # (Note: var_y is already constructed to carry only the closing price information.)
-        label = var_y[:, -self.hparams.pred_len:, :, 0]
+        label = var_y[:, -self.hparams.pred_len:, 0]
+
         # Now, call the model and keep all output channels (which is only 1 channel now).
         prediction, confidence = self.model(var_x, marker_x)
         prediction = prediction[:, -self.hparams.pred_len:, :]
+
         # true_price_today is now directly taken from the closing price, which is at index 3 in the original var_x.
-        true_price_today = var_x[:, -1, 3]
-        # print(f"prediction shape: {prediction.shape} and label shape {label.shape}")
-        # print(f"prediction value: \n {prediction}")
-        # print(f"label value: \n {label}")
+        true_price_today = true[:, -1, 0]
+        # var_x[:, -1, 3], 
+
         return prediction, label, true_price_today, confidence
-        # return prediction, label
 
     def training_step(self, batch, batch_idx):
         loss = self.loss_function(*self.forward(batch, batch_idx))
@@ -138,8 +128,6 @@ class LTSFRunner(L.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
-        # prediction shape: torch.Size([1, 1, 1]), label shape: torch.Size([1, 1, 1])
-        # prediction, label = self.forward(batch, batch_idx)
         prediction, label, true_price_today, confidence = self.forward(batch, batch_idx)
         mae = torch.nn.functional.l1_loss(prediction, label)
         mse = torch.nn.functional.mse_loss(prediction, label)
@@ -148,8 +136,8 @@ class LTSFRunner(L.LightningModule):
         mean_error_percentage = torch.mean(torch.abs((label - prediction) / label) * 100)
         self.log('test/mae', mae, on_step=False, on_epoch=True, sync_dist=True)
         self.log('test/mse', mse, on_step=False, on_epoch=True, sync_dist=True)
-        self.log('test/custom_loss', custom_loss, on_step=False, on_epoch=True, sync_dist=True)
-        self.log('test/error_percentage', mean_error_percentage, on_step=False, on_epoch=True, sync_dist=True)
+        self.log('test/custom_loss', custom_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log('test/error_percentage', mean_error_percentage, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
 
         predicted_price_tomorrow = prediction.item()
         true_price_tomorrow = label.item()
@@ -171,8 +159,6 @@ class LTSFRunner(L.LightningModule):
         self.confidences.append(confidence_score)
         self.custom_losses.append(custom_loss.item())
 
-
-
     def configure_loss(self):
         #self.loss_function = ltsf_lossfunc.MSELossWrapper(reduction='mean')
         self.loss_function = ltsf_lossfunc.MSEPenaltyLoss(penalty_factor=5.0)
@@ -183,7 +169,7 @@ class LTSFRunner(L.LightningModule):
                 self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.optimizer_weight_decay)
         elif self.hparams.optimizer == 'AdamW':
             optimizer = torch.optim.AdamW(
-                self.parameters(), lr=self.hparams.lr, betas=(0.9, 0.95), weight_decay=1e-5)
+                self.parameters(), lr=self.hparams.lr, betas=self.hparams.optimizer_betas, weight_decay=self.hparams.optimizer_weight_decay)
         elif self.hparams.optimizer == 'LBFGS':
             optimizer = torch.optim.LBFGS(self.parameters(), lr=self.hparams.lr, max_iter=self.hparams.lr_max_iter)
         else:
@@ -192,7 +178,7 @@ class LTSFRunner(L.LightningModule):
         if self.hparams.lr_scheduler == 'StepLR':
             lr_scheduler = {
                 "scheduler": lrs.StepLR(
-                    optimizer, step_size=self.hparams.lr_step_size, gamma=self.hparams.lr_gamma)
+                    optimizer, step_size=self.hparams.lr_step_size, gamma=self.hparams.lr_gamma, verbose=True)
             }
         elif self.hparams.lr_scheduler == 'MultiStepLR':
             lr_scheduler = {
@@ -247,7 +233,6 @@ class LTSFRunner(L.LightningModule):
         return Model(**model_args_instance)
 
     def train_plot_losses(self):
-        # Plot the loss values after training is complete
         plt.figure(figsize=(10, 5))
         plt.plot(range(1, len(self.train_losses) + 1), self.train_losses, marker='o', label='Train Loss')
         plt.xlabel('Epoch')
@@ -259,7 +244,6 @@ class LTSFRunner(L.LightningModule):
         plt.close()
 
     def test_plot_losses(self):
-        # Plot the loss values after training is complete
         plt.figure(figsize=(10, 5))
         plt.plot(range(1, len(self.test_losses) + 1), self.test_losses, marker='o', label='Test Loss')
         plt.xlabel('Epoch')

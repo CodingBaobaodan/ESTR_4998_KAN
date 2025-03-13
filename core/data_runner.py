@@ -7,12 +7,7 @@ from torch.utils.data import Dataset
 
 
 class GeneralTSFDataset(Dataset):
-    """
-    General TSF Dataset.
-    """
-
-    def __init__(self, data_root, dataset_name, hist_len, pred_len, data_split, freq, indicators_bool, mode): # , features_mask):
-        #self.data_dir = os.path.join(data_root, dataset_name)
+    def __init__(self, data_root, hist_len, pred_len, data_split, freq, indicators_bool, mode):
         self.data_dir = data_root
         self.hist_len = hist_len
         self.pred_len = pred_len
@@ -25,49 +20,48 @@ class GeneralTSFDataset(Dataset):
 
         mode_map = {'train': 0, 'valid': 1, 'test': 2}
         self.set_type = mode_map[mode]
-        self.var, self.time_marker = self.__read_data__()
-
-        
+        self.var, self.time_marker, self.norm_closing = self.__read_data__()
 
     def __read_data__(self):
         norm_feature_path = os.path.join(self.data_dir, 'feature.npz')
         norm_feature = np.load(norm_feature_path)
 
-        #norm_var = norm_feature['norm_var']
-        norm_var = norm_feature['norm_var'][:, np.array(self.indicators_bool).astype(bool)]
-   
+        #norm_var = norm_feature['norm_var'][:, np.array(self.indicators_bool).astype(bool)]
+        norm_var = norm_feature['norm_var'][:, np.array(self.indicators_bool, dtype=bool)]
         norm_time_marker = norm_feature['norm_time_marker']
+        norm_closing = norm_feature['norm_var'][:, sum(self.indicators_bool[:-14])+4-1] # Check!
 
         border1s = [0, self.train_len, self.train_len + self.val_len]
         border2s = [self.train_len, self.train_len + self.val_len, self.train_len + self.val_len + self.test_len]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
+
         norm_var = norm_var[border1:border2]
         norm_time_marker = norm_time_marker[border1:border2]
+        norm_closing = norm_closing[border1:border2]
 
         norm_var = norm_var[:, :, np.newaxis]  # (L, N, C)
         norm_time_marker = norm_time_marker[:, np.newaxis, :]  # L, -1, C, C = [tod, dow, dom, doy]
-        return norm_var, norm_time_marker
+        norm_closing = norm_closing[:, np.newaxis]
+        
+        return norm_var, norm_time_marker, norm_closing
 
     def __getitem__(self, index):
         hist_start = index
         hist_end = index + self.hist_len
         pred_end = hist_end + self.pred_len
+
         var_x = self.var[hist_start:hist_end, ...]
         marker_x = self.time_marker[hist_start:hist_end, ...]
 
-        #print(f"Index: {index}, Hist Range: {hist_start}-{hist_end}, Pred Range: {hist_end}-{pred_end}")
-        #var_y = self.var[hist_end:pred_end, ...]
-        # Modified code, assume close price index is at 3
-        var_y = self.var[hist_end:pred_end, 3, 0]
-        #print("Extracted var_y (close price) for index:", index, var_y)
-
+        #var_y = self.var[hist_end:pred_end, 3, 0]
+        var_y = self.norm_closing[hist_end:pred_end, ...]
+        var_y = var_y[:, np.newaxis]  # Shape: (pred_len, 1, 1)
         marker_y = self.time_marker[hist_end:pred_end, ...]
 
-        # Modified code: Adjust var_y shape to (pred_len, N=1, C=1) for consistency
-        var_y = var_y[:, np.newaxis, np.newaxis]  # Shape: (pred_len, 1, 1)
+        true = self.norm_closing[:, :, np.newaxis][hist_start:hist_end, ...]
 
-        return var_x, marker_x, var_y, marker_y
+        return var_x, marker_x, var_y, marker_y, true
 
     def __len__(self):
         return len(self.var) - (self.hist_len + self.pred_len) + 1
@@ -76,7 +70,6 @@ class GeneralTSFDataset(Dataset):
 def data_provider(config, mode):
     return GeneralTSFDataset(
         data_root=config['data_root'],
-        dataset_name=config['dataset_name'],
         hist_len=config['hist_len'],
         pred_len=config['pred_len'],
         data_split=config['data_split'],
@@ -87,7 +80,6 @@ def data_provider(config, mode):
 
 
 class DataInterface(pl.LightningDataModule):
-
     def __init__(self, **kwargs):
         super().__init__()
         self.num_workers = kwargs['num_workers']
