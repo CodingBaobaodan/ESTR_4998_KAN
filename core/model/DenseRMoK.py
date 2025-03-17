@@ -52,17 +52,51 @@ class RevIN(nn.Module):
             x = x * self.affine_weight + self.affine_bias
         return x
 
+    # def _denormalize(self, x):
+    #     # Select the statistics for closing price which is at index 3 in the input.
+    #     # print(f"x_value 1: {x}" )
+    #     # print(f"x_shape: {x.shape}")
+    #     min_target = self.min_val[..., sum(self.indicators_list_01[:-14])+4-1]  # Keepdim so that shape broadcasting works.
+    #     max_target = self.max_val[..., sum(self.indicators_list_01[:-14])+4-1]
+    #     if self.affine:
+    #         x = (x - self.affine_bias) / (self.affine_weight + self.eps)
+
+    #     x = x * (max_target - min_target + self.eps) + min_target
+    #     if x.shape[-1] > 1:
+    #         x = x[..., sum(self.indicators_list_01[:-14])+4-1]
+
+    #     # print(f"x_value 2: {x}" )
+    #     # print(f"x_shape: {x.shape}")
+    #     return x
+    
     def _denormalize(self, x):
-        # Select the statistics for closing price which is at index 3 in the input.
-        min_target = self.min_val[..., sum(self.indicators_list_01[:-14])+4-1]  # Keepdim so that shape broadcasting works.
-        max_target = self.max_val[..., sum(self.indicators_list_01[:-14])+4-1]
+        # Compute the index for the closing price column.
+        # For example: if indicators_list_01 = [...], then the index is calculated as:
+        col_index = sum(self.indicators_list_01[:-14]) + 4 - 1
+
+        # Print raw min and max statistics for the selected column for verification.
+        # print("Min for closing price:", self.min_val[..., col_index])
+        # print("Max for closing price:", self.max_val[..., col_index])
+        
         if self.affine:
             x = (x - self.affine_bias) / (self.affine_weight + self.eps)
 
-        x = x * (max_target - min_target + self.eps) + min_target
+        # Use slicing to extract the correct closing price statistics while preserving the dimension.
+        closing_min = self.min_val[..., col_index:col_index+1]
+        closing_max = self.max_val[..., col_index:col_index+1]
+        
+        # Reverse the normalization: x = normalized_value * (max - min) + min.
+        x = x * (closing_max - closing_min) + closing_min
+
+        # If the last dimension is larger than 1, slice to keep only the closing price column.
         if x.shape[-1] > 1:
-            x = x[..., sum(self.indicators_list_01[:-14])+4-1]
+            x = x[..., col_index:col_index+1]
+        
+        # Print the denormalized closing price data for verification.
+        # print("Selected closing price data:", x)
         return x
+
+    
         
     def set_statistics(self, min_val, max_val):
         self.min_val = min_val
@@ -164,17 +198,27 @@ class DenseRMoK(nn.Module):
     def forward(self, var_x, marker_x):
 
         var_x = var_x[..., 0]  # x: [B, Li, N]
+        # print(f"var_x_shape 1: {var_x.shape}")
         B, L, N = var_x.shape
         var_x = self.rev(var_x, 'norm') if self.rev else var_x
         var_x = self.dropout(var_x).transpose(1, 2).reshape(B * N, L)
+
+        # print(f"var_x: {var_x}")
+        # print(f"var_x_shape 2: {var_x.shape}")
 
         score = F.softmax(self.gate(var_x), dim=-1)  # (BxN, E)
         expert_outputs = torch.stack([self.experts[i](var_x) for i in range(self.num_experts_selected)], dim=-1)  # (BxN, Lo, E)
 
         prediction = torch.einsum("BLE,BE->BL", expert_outputs, score).reshape(B, N, -1).permute(0, 2, 1)
+        # print(f"var_x_shape 3: {prediction.shape}")
+
         prediction = self.final_layer(prediction)
+        # print(f"var_x_shape 4: {prediction.shape}")
+
 
         prediction = self.rev(prediction, 'denorm')
+        # print(f"var_x_shape 5: {prediction.shape}")
+
 
         # ---------- Confidence Estimation ----------
         # Compute variance among expert outputs along the expert dimension.

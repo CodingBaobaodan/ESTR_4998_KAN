@@ -22,9 +22,9 @@ class LTSFRunner(L.LightningModule):
         self.indicators_bool = kargs['indicators_list_01']
         self.dataset_name = kargs['dataset_name']
 
-        stat = np.load(os.path.join(self.hparams.data_root, 'var_scaler_info.npz'))
-        self.register_buffer('min', torch.tensor(stat['min'][np.array(self.indicators_bool).astype(bool)]).float())
-        self.register_buffer('max', torch.tensor(stat['max'][np.array(self.indicators_bool).astype(bool)]).float())
+        # stat = np.load(os.path.join(self.hparams.data_root, 'var_scaler_info.npz'))
+        # self.register_buffer('min', torch.tensor(stat['min'][np.array(self.indicators_bool).astype(bool)]).float())
+        # self.register_buffer('max', torch.tensor(stat['max'][np.array(self.indicators_bool).astype(bool)]).float())
 
         self.train_losses = []
         self.test_losses = []
@@ -110,8 +110,22 @@ class LTSFRunner(L.LightningModule):
         prediction, confidence = self.model(var_x, marker_x)
         prediction = prediction[:, -self.hparams.pred_len:, :]
 
+        
+        # print(f"var_x : {var_x.shape}")
+        # print(f"var_y : {var_y.shape}")
+        # print(f"true : {true.shape}")
+        # print(f"label : {label.shape}")
+
         # true_price_today is now directly taken from the closing price, which is at index 3 in the original var_x.
-        true_price_today = true[:, -1, 0]
+        # true_price_today = true[:, -1, 0]
+        #print(f"label : {label}")
+        
+        true_price_today = var_x[:,-1,sum(self.indicators_bool[:-14])+4-1]
+
+        # print(f"true_price_today : {true_price_today.shape}")
+        # print(f"true_price_today : {true_price_today}")
+
+
         # var_x[:, -1, 3], 
 
         return prediction, label, true_price_today, confidence
