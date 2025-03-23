@@ -85,6 +85,7 @@ def create_initial_population(conf):
 
 def selection(population, all_fitnesses, pop_size, tournament_size=3):
     pop_size = pop_size // 2
+    tournament_size = min(tournament_size, pop_size)
 
     selected = []
     for _ in range(pop_size):
