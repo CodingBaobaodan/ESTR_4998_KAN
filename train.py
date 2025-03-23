@@ -229,6 +229,7 @@ def genetic_algorithm(training_conf, conf):
             if (mg>=1) or (mg<=0):
                 mg = mutation_rate[generation]
 
+            print(mg)
             mutation_rate.append(mg)
 
             next_population.append(mutation(child1, mg, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
