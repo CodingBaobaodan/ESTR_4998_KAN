@@ -56,8 +56,6 @@ def fitness_function(ind, training_conf, conf):
 
     ind.fitness = -1 * test_loss # min MSE == max -MSE 
 
-    print(ind.fitness)
-
     return ind
 
 def create_initial_population(conf):
@@ -358,7 +356,8 @@ def train_func(trainer, data_module, model, callback):
 
 
 
-ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'WDC']
+ticker_symbols = ['AAPL']
+#, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'WDC']
 
 if __name__ == '__main__':
 
