@@ -51,10 +51,9 @@ def fitness_function(ind, training_conf, conf):
 
     print("Experts Taylor, Wavelet, Jacobi, Cheby, RBF, NaiveFourier", conf['args.KAN_experts_list_01'])
 
-    trainer, data_module, model = train_init(training_conf, conf)
-    trainer, data_module, model = train_func(trainer, data_module, model)
+    trainer, data_module, model, callback = train_init(training_conf, conf)
+    trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
 
-    test_loss = model.test_losses[-1]
     ind.fitness = -1 * test_loss # min MSE == max -MSE 
 
     print(ind.fitness)
@@ -300,8 +299,9 @@ class TestLossLoggerCallback(Callback):
             self.test_losses.append(avg_loss.item())
             print(f", Average Test Loss = {avg_loss.item():.4f}")
         
-        print("Callback", self.test_losses[-1])
 
+    def get_last_test_loss(self):
+            return self.test_losses[-1] if self.test_losses else None
 
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
@@ -342,20 +342,21 @@ def train_init(hyper_conf, conf):
         check_val_every_n_epoch=0, # No validation every n epoch
     )
 
-    print(conf)
     data_module = DataInterface(**conf)
     model = LTSFRunner(**conf)
 
-    return trainer, data_module, model
+    callback = TestLossLoggerCallback()
 
-def train_func(trainer, data_module, model):
+    return trainer, data_module, model, callback
+
+def train_func(trainer, data_module, model, callback):
     trainer.fit(model=model, datamodule=data_module)
     trainer.test(model=model, datamodule=data_module)
 
     model.train_plot_losses()
     model.test_plot_losses()
 
-    return trainer, data_module, model
+    return trainer, data_module, model, callback.get_last_test_loss()
 
 
 
