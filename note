@@ -55,3 +55,8 @@ bug: float division by zero
 
 done (11/03/2025):
 remove bug slicing column number 3 (closing price), to dynamically changing column number
+
+done (23/03/2025):
+1. population size reduced by a factor of 2 at each generations
+2. fitness score of each chromosome is now corrected
+3. fitness score should be return/profit instead of penalized MSE?
