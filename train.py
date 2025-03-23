@@ -287,7 +287,7 @@ class TrainLossLoggerCallback(Callback):
             # Print the average loss for the epoch
             print(f", Average Train Loss = {avg_loss.item():.4f}")
 
-# Check!
+
 class TestLossLoggerCallback(Callback):
     def __init__(self):
         super().__init__()
@@ -299,7 +299,6 @@ class TestLossLoggerCallback(Callback):
             self.test_losses.append(avg_loss.item())
             print(f", Average Test Loss = {avg_loss.item():.4f}")
         
-
     def get_last_test_loss(self):
             return self.test_losses[-1]
 
@@ -345,9 +344,8 @@ def train_init(hyper_conf, conf):
     data_module = DataInterface(**conf)
     model = LTSFRunner(**conf)
 
-    callback = TestLossLoggerCallback()
 
-    return trainer, data_module, model, callback
+    return trainer, data_module, model, callbacks[2]
 
 def train_func(trainer, data_module, model, callback):
     trainer.fit(model=model, datamodule=data_module)
