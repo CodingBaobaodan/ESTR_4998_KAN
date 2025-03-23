@@ -300,7 +300,7 @@ class TestLossLoggerCallback(Callback):
             self.test_losses.append(avg_loss.item())
             print(f", Average Test Loss = {avg_loss.item():.4f}")
         
-        print("Callback", self.test_losses)
+        print("Callback", self.test_losses[-1])
 
 
 def train_init(hyper_conf, conf):
