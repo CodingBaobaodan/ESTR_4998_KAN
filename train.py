@@ -301,7 +301,7 @@ class TestLossLoggerCallback(Callback):
         
 
     def get_last_test_loss(self):
-            return self.test_losses[-1] if self.test_losses else None
+            return self.test_losses[-1]
 
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
