@@ -57,6 +57,8 @@ def fitness_function(ind, training_conf, conf):
     test_loss = model.test_losses[-1]
     ind.fitness = -1 * test_loss # min MSE == max -MSE 
 
+    print(ind.fitness)
+
     return ind
 
 def create_initial_population(conf):
@@ -297,6 +299,8 @@ class TestLossLoggerCallback(Callback):
         if avg_loss is not None:
             self.test_losses.append(avg_loss.item())
             print(f", Average Test Loss = {avg_loss.item():.4f}")
+        
+        print("Callback", self.test_losses)
 
 
 def train_init(hyper_conf, conf):
