@@ -85,14 +85,14 @@ def create_initial_population(conf):
 
 def selection(population, all_fitnesses, pop_size, tournament_size=3):
     
+    pop_size = pop_size // 2
+
     selected = []
     for _ in range(pop_size):
         tournament = random.sample(list(zip(population, all_fitnesses)), tournament_size)
         winner = max(tournament, key=lambda x: x[1])[0]
         selected.append(winner)
 
-    pop_size = pop_size // 2
-    
     return selected, pop_size
 
 def intra_chromosome_crossover(ch1, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts):
@@ -214,8 +214,6 @@ def genetic_algorithm(training_conf, conf):
         next_population = []
 
         for i in range(0, len(population), 2):
-
-        #for i in range(0, conf['population_size'], 2):
             parent1 = population[i]
             parent2 = population[i + 1]
 
@@ -394,7 +392,7 @@ if __name__ == '__main__':
     parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience") # // Not used
     parser.add_argument("--num_workers", default=10, type=int, help="Number of workers for data loading")
 
-    parser.add_argument("--population_size", default=8, type=int, help="Population Size for GA")
+    parser.add_argument("--population_size", default=16, type=int, help="Population Size for GA")
     parser.add_argument("--total_generations", default=4, type=int, help="Total number of generations for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") # // Check!
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
