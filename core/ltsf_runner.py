@@ -146,6 +146,8 @@ class LTSFRunner(L.LightningModule):
         mae = torch.nn.functional.l1_loss(prediction, label)
         mse = torch.nn.functional.mse_loss(prediction, label)
         custom_loss = self.loss_function(prediction, label, true_price_today, confidence)
+        print(custom_loss.shape)
+        print(custom_loss)
         self.test_losses.append(custom_loss.item())
         mean_error_percentage = torch.mean(torch.abs((label - prediction) / label) * 100)
         self.log('test/mae', mae, on_step=False, on_epoch=True, sync_dist=True)
