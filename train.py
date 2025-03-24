@@ -379,7 +379,7 @@ def fitness_function(ind, training_conf, conf):
     print("Experts Taylor, Wavelet, Jacobi, Cheby", conf['args.KAN_experts_list_01']) # KAN Experts to be changed
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
-    trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+    trainer, data_module, model, test_loss, _ = train_func(trainer, data_module, model, callback)
 
     ind.fitness = -1 * test_loss # min MSE == max -MSE 
 
@@ -617,6 +617,7 @@ class TestLossLoggerCallback(Callback):
     def __init__(self):
         super().__init__()
         self.test_losses = []
+        self.total_testing_trading_days = []
 
     def on_test_epoch_end(self, trainer, pl_module):
         avg_loss = trainer.callback_metrics.get('test/custom_loss')
@@ -625,8 +626,15 @@ class TestLossLoggerCallback(Callback):
             self.test_losses.append(avg_loss.item())
             print(f", Average Test Loss = {avg_loss.item():.4f}")
 
+        total_testing_trading_days = trainer.callback_metrics.get('test/total_testing_trading_days')
+        print(total_testing_trading_days)
+        self.total_testing_trading_days.append(total_testing_trading_days)
+
     def get_last_test_loss(self):
         return self.test_losses[-1]
+    
+    def get_total_testing_trading_days(self):
+        return self.total_testing_trading_days[-1]
 
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
@@ -680,7 +688,7 @@ def train_func(trainer, data_module, model, callback):
     model.train_plot_losses()
     model.test_plot_losses()
 
-    return trainer, data_module, model, callback.get_last_test_loss()
+    return trainer, data_module, model, callback.get_last_test_loss(), callback.get_total_testing_trading_days()
 
 
 if __name__ == '__main__':
@@ -714,7 +722,6 @@ if __name__ == '__main__':
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
     parser.add_argument("--n_KAN_experts", default=4, type=int, help="Number of KAN experts to be used")
-    parser.add_argument("--end", default=False, type=bool, help="Whether this chromosome is at end of generation")
     parser.add_argument("--drop", default=0.2, type=float, help="Dropout rate for input features in KAN")
 
     parser.add_argument("--pred_len", default=1, type=int, help="Number of predicted made each time (should be fixed)")
@@ -735,11 +742,9 @@ if __name__ == '__main__':
 
 
     for symbol in ticker_symbols:
-        global total_trading_days
-        total_trading_days = 0
-
+        total_check = 0
         for i in range(0, max_iteration):
-            if total_trading_days>=1000:
+            if total_check>=1000:
                 break
             else:
                 if i==0:
@@ -786,11 +791,10 @@ if __name__ == '__main__':
                 print(args.KAN_experts_list_01)
 
                 print("Optimal model is finally trained below: ")
-                args.end = True
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
-                trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
-                print(total_trading_days)
-                args.end = False
+                trainer, data_module, model, test_loss, total_testing_trading_days = train_func(trainer, data_module, model, callback)
+                total_check += total_testing_trading_days
+                print(total_check)
                 print("\n")
 
                 print("Baselinee model is built: ")
