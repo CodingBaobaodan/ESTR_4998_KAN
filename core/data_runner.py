@@ -32,7 +32,7 @@ class GeneralTSFDataset(Dataset):
         norm_closing = norm_feature['norm_var'][:, sum(self.indicators_bool[:-14])+4-1]
 
         border1s = [0, self.train_len, self.train_len + self.val_len]
-        border2s = [self.train_len, self.train_len + self.val_len, self.train_len + self.val_len + 64] #self.test_len]
+        border2s = [self.train_len, self.train_len + self.val_len, self.train_len + self.val_len + self.test_len]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
@@ -49,9 +49,7 @@ class GeneralTSFDataset(Dataset):
     def __getitem__(self, index):
         hist_start = index
         hist_end = index + self.hist_len
-        print(hist_end)
         pred_end = hist_end + self.pred_len
-        print(pred_end)
 
         var_x = self.var[hist_start:hist_end, ...]
         marker_x = self.time_marker[hist_start:hist_end, ...]
