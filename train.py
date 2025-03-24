@@ -740,7 +740,7 @@ if __name__ == '__main__':
     # start_date, end_date = '2010-02-17','2022-12-30'
     
     all_df = pd.read_csv("dataset/data_for_dates.csv")
-    max_iteration = math.floor(3242 // args.mov_forward)
+    max_iteration = math.floor(3242 // args.data_split[2])
             
     for symbol in ticker_symbols:
         args.total_trading_days = 0 
