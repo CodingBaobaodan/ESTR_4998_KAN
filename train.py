@@ -303,10 +303,10 @@ def read_data(start_date, end_date):
 
     output_dir = 'csv'
     os.makedirs(output_dir, exist_ok=True)
-    stock_df.to_csv(f"{output_dir}/stock_df/{start_date}/{end_date}.csv", index=True)
-    stock_indicators_df.to_csv(f"{output_dir}/stock_indicators_df/{start_date}/{end_date}.csv", index=True)
-    macro_df.to_csv(f"{output_dir}/macro_df/{start_date}/{end_date}.csv", index=True)
-    index_df.to_csv(f"{output_dir}/index_df/{start_date}/{end_date}.csv", index=True)
+    stock_df.to_csv(f"{output_dir}/stock_df_{start_date}_{end_date}.csv", index=True)
+    stock_indicators_df.to_csv(f"{output_dir}/stock_indicators_df_{start_date}_{end_date}.csv", index=True)
+    macro_df.to_csv(f"{output_dir}/macro_df_{start_date}_{end_date}.csv", index=True)
+    index_df.to_csv(f"{output_dir}/index_df_{start_date}_{end_date}.csv", index=True)
 
 
     cap_weighted_composite_index_df = cap_weighted_composite_index(stock_df)
@@ -330,7 +330,7 @@ def read_data(start_date, end_date):
         max_val = combined_data.max()
 
         # Ensure the output directory exists
-        output_dir = f"dataset/{stock}/{start_date}/{end_date}"
+        output_dir = f"dataset/{stock}_{start_date}_{end_date}"
         os.makedirs(output_dir, exist_ok=True)
 
         # Save scaling information using min and max values
@@ -349,7 +349,7 @@ def read_data(start_date, end_date):
         # Save the final combined data and normalized time markers
         np.savez(os.path.join(output_dir, f'feature.npz'), norm_var=combined_data.values, norm_time_marker=norm_time_marker)
 
-        combined_data.to_csv(f"{output_dir}/all_data/{start_date}/{end_date}.csv", index=True)
+        combined_data.to_csv(f"{output_dir}/all_data_{start_date}_{end_date}.csv", index=True)
 
 # Define a basic structure for Chromosome and Population
 class Chromosome:
