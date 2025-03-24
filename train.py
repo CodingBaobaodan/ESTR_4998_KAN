@@ -542,10 +542,12 @@ def genetic_algorithm(training_conf, conf):
 
         next_population = []
 
-        for i in range(0, max(pop_size, 2), 2):
-            print(len(population))
-            parent1 = population[i]
-            parent2 = population[i + 1]
+        for i in range(0, pop_size, 2):
+            if len(population)>=2:
+                parent1 = population[i]
+                parent2 = population[i + 1]
+            else: 
+                pass
 
             if ( generation == (conf['total_generations']//2) or ((len(fg) >= 2) and (abs(fg[-1]-fg[-2]) >= 1e-3)) ):
                 if generation != conf['total_generations'] :
@@ -724,10 +726,15 @@ if __name__ == '__main__':
 
     args.total_generations = math.floor(math.log2(args.population_size))
 
-    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
-    start_date, end_date = '2010-01-01','2022-12-31'
+    args.test_len = args.data_split[2]
 
-    for date in range(10): # TO DO 
+    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
+
+    df = pd.read_csv("dataset/AAPL/all_data.csv")
+    start_date, end_date = df.loc[0, "Date"],  df.loc[0+args.test_len, "Date"]
+
+    for i in range(1, 11): # TO DO 
+        print(f"Start from {start_date} and End at {end_date}:")
         read_data(start_date, end_date)
     
         for symbol in ticker_symbols:
@@ -772,4 +779,4 @@ if __name__ == '__main__':
             print("Baselinee model is built: ")
             # // Check! Baseline Model
 
-        start_date, end_date = '2010-01-01','2022-12-31' # TO DO 
+        start_date, end_date = df.loc[i*args.test_len, "Date"],  df.loc[(i+1)*args.test_len, "Date"]
