@@ -629,6 +629,7 @@ class TestLossLoggerCallback(Callback):
         trading_days = trainer.callback_metrics.get('test/number of testing trading days')
         #self.trading_days.append(trading_days)
         print(trading_days)
+        print(type(trading_days))
         
     def get_last_test_loss(self):
         return self.test_losses[-1]
@@ -749,9 +750,12 @@ if __name__ == '__main__':
                 break
             else:
                 if i==0:
-                    start_date, end_date = all_df.loc[0, "Date"],  all_df.loc[sum(args.data_split), "Date"]
+                    start_index, end_index = 0, sum(args.data_split)
+                    start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
                 else: 
-                    start_date, end_date = all_df.loc[sum(args.data_split)+i*args.data_split[2], "Date"],  all_df.loc[sum(args.data_split)+(i+1)*args.data_split[2], "Date"]
+                    start_index, end_index = end_index+1, start_index + args.data_split[2]
+                    start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
+
                 read_data(start_date, end_date)
                 print(f"Start from {start_date} and End at {end_date}:")
 
