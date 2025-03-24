@@ -717,7 +717,7 @@ if __name__ == '__main__':
     parser.add_argument("--drop", default=0.2, type=float, help="Dropout rate for input features in KAN")
 
     parser.add_argument("--pred_len", default=1, type=int, help="Number of predicted made each time (should be fixed)")
-    parser.add_argument("--data_split", default=[2000, 0, 500], type=list, help="Train-Val-Test Ratio (Val should be fixed to 0)")
+    parser.add_argument("--data_split", default=[500, 0, 100], type=list, help="Train-Val-Test Ratio (Val should be fixed to 0)")
     parser.add_argument("--freq", default=1440, type=int, help="(should be fixed)") 
 
     args = parser.parse_args()
@@ -725,20 +725,20 @@ if __name__ == '__main__':
     args.n_hyperparameters = args.max_hist_len_n_bit + args.n_KAN_experts
 
     args.total_generations = math.floor(math.log2(args.population_size))
-
     args.test_len = args.data_split[2]
 
     ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
-
-    df = pd.read_csv("dataset/AAPL/all_data.csv")
-    #start_date, end_date = df.loc[0, "Date"],  df.loc[0+args.test_len, "Date"]
     start_date, end_date = '2010-01-01','2022-12-31'
+    read_data(start_date, end_date)
 
+    all_df = pd.read_csv("dataset/data_for_dates.csv")
+    max_length = all_df.shape[0] # 3242 
+    max_iteration = math.floor(max_length // args.test_len) # 3242 / 100
 
-    for i in range(1, 2): # TO DO 
+    for i in range(0, max_iteration):
+        start_date, end_date = all_df.loc[i*args.test_len, "Date"],  all_df.loc[(i+1)*args.test_len, "Date"]
         print(f"Start from {start_date} and End at {end_date}:")
-        read_data(start_date, end_date)
-    
+        
         for symbol in ticker_symbols:
             # Before GA
             args.dataset_name = symbol
@@ -781,5 +781,3 @@ if __name__ == '__main__':
             print("Baselinee model is built: ")
             # // Check! Baseline Model
 
-        start_date, end_date = '2010-01-01','2022-12-31'
-        # start_date, end_date = df.loc[i*args.test_len, "Date"],  df.loc[(i+1)*args.test_len, "Date"]
