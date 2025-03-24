@@ -49,7 +49,9 @@ class GeneralTSFDataset(Dataset):
     def __getitem__(self, index):
         hist_start = index
         hist_end = index + self.hist_len
+        print(hist_end)
         pred_end = hist_end + self.pred_len
+        print(pred_end)
 
         var_x = self.var[hist_start:hist_end, ...]
         marker_x = self.time_marker[hist_start:hist_end, ...]
