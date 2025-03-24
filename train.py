@@ -351,7 +351,6 @@ def read_data(start_date, end_date):
 
         combined_data.to_csv(f"{output_dir}/all_data_{start_date}_{end_date}.csv", index=True)
 
-# Define a basic structure for Chromosome and Population
 class Chromosome:
     def __init__(self, features, hyperparameters):
         self.genes = {
@@ -380,7 +379,7 @@ def fitness_function(ind, training_conf, conf):
     print("Experts Taylor, Wavelet, Jacobi, Cheby", conf['args.KAN_experts_list_01']) # KAN Experts to be changed
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
-    trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+    trainer, data_module, model, test_loss, trading_days = train_func(trainer, data_module, model, callback)
 
     ind.fitness = -1 * test_loss # min MSE == max -MSE 
 
@@ -618,15 +617,23 @@ class TestLossLoggerCallback(Callback):
     def __init__(self):
         super().__init__()
         self.test_losses = []
+        self.trading_days = 0
 
     def on_test_epoch_end(self, trainer, pl_module):
         avg_loss = trainer.callback_metrics.get('test/custom_loss')
+        
         if avg_loss is not None:
             self.test_losses.append(avg_loss.item())
             print(f", Average Test Loss = {avg_loss.item():.4f}")
+
+        trading_days = trainer.callback_metrics.get('test/number of testing trading days')
+        self.trading_days = trading_days
         
     def get_last_test_loss(self):
-            return self.test_losses[-1]
+        return self.test_losses[-1]
+    
+    def get_trading_days(self):
+        return self.trading_days
 
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
@@ -680,7 +687,7 @@ def train_func(trainer, data_module, model, callback):
     model.train_plot_losses()
     model.test_plot_losses()
 
-    return trainer, data_module, model, callback.get_last_test_loss()
+    return trainer, data_module, model, callback.get_last_test_loss(), callback.get_trading_days()
 
 
 if __name__ == '__main__':
@@ -726,25 +733,25 @@ if __name__ == '__main__':
     args.n_hyperparameters = args.max_hist_len_n_bit + args.n_KAN_experts
 
     args.total_generations = math.floor(math.log2(args.population_size))
-    args.test_len = args.data_split[2]
+    args.mov_forward = args.data_split[2]
 
     ticker_symbols = ['AAPL'] #, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
     # start_date, end_date = '2010-02-17','2022-12-30'
     
     all_df = pd.read_csv("dataset/data_for_dates.csv")
-    max_iteration = math.floor(3242 // args.test_len)
-
-    args.total_trading_days = 0 
-
-    for i in range(0, max_iteration):
-        if args.total_trading_days>=1000:
-            break
-        else:
-            start_date, end_date = all_df.loc[i*args.test_len, "Date"],  all_df.loc[(i+1)*args.test_len, "Date"]
-            read_data(start_date, end_date)
-            print(f"Start from {start_date} and End at {end_date}:")
+    max_iteration = math.floor(3242 // args.mov_forward)
             
-            for symbol in ticker_symbols:
+    for symbol in ticker_symbols:
+        args.total_trading_days = 0 
+
+        for i in range(0, max_iteration):
+            if args.total_trading_days>=1000:
+                break
+            else:
+                start_date, end_date = all_df.loc[i*args.mov_forward, "Date"],  all_df.loc[(i+1)*args.mov_forward, "Date"]
+                read_data(start_date, end_date)
+                print(f"Start from {start_date} and End at {end_date}:")
+
                 # Before GA
                 args.dataset_name = symbol
 
@@ -780,7 +787,9 @@ if __name__ == '__main__':
 
                 print("Optimal model is finally trained below: ")
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
-                trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+                trainer, data_module, model, test_loss, trading_days = train_func(trainer, data_module, model, callback)
+                args.total_trading_days += trading_days
+                print(args.total_trading_days)
                 print("\n")
 
                 print("Baselinee model is built: ")
