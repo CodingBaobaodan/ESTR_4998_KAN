@@ -627,8 +627,8 @@ class TestLossLoggerCallback(Callback):
             print(f", Average Test Loss = {avg_loss.item():.4f}")
 
         trading_days = trainer.callback_metrics.get('test/number of testing trading days')
-        self.trading_days.append(int(trading_days))
-        print(self.trading_days)
+        #self.trading_days.append(trading_days)
+        print(trading_days)
         
     def get_last_test_loss(self):
         return self.test_losses[-1]
@@ -734,7 +734,6 @@ if __name__ == '__main__':
     args.n_hyperparameters = args.max_hist_len_n_bit + args.n_KAN_experts
 
     args.total_generations = math.floor(math.log2(args.population_size))
-    args.mov_forward = sum(args.data_split)
 
     ticker_symbols = ['AAPL'] #, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
     # start_date, end_date = '2010-02-17','2022-12-30'
@@ -749,7 +748,10 @@ if __name__ == '__main__':
             if args.total_trading_days>=1000:
                 break
             else:
-                start_date, end_date = all_df.loc[i*args.mov_forward, "Date"],  all_df.loc[(i+1)*args.mov_forward, "Date"]
+                if i==0:
+                    start_date, end_date = all_df.loc[0, "Date"],  all_df.loc[sum(args.data_split), "Date"]
+                else: 
+                    start_date, end_date = all_df.loc[sum(args.data_split)+i*args.data_split[2], "Date"],  all_df.loc[sum(args.data_split)+(i+1)*args.data_split[2], "Date"]
                 read_data(start_date, end_date)
                 print(f"Start from {start_date} and End at {end_date}:")
 
