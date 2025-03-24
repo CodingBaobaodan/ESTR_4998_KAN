@@ -96,7 +96,7 @@ class LTSFRunner(L.LightningModule):
             self.log('test/cumulative_return', evaluation_metrics['cumulative_return'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/loss_days', evaluation_metrics['loss_days'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
-            self.log('test/total_testing_trading_days', evaluation_metrics['total_testing_trading_days'], on_step=True, on_epoch=True, sync_dist=True)
+            self.log('test/total_testing_trading_days', evaluation_metrics['total_testing_trading_days'], on_step=False, on_epoch=True, sync_dist=True)
 
             # Plot confidence vs loss
             # util.plot_confidence_vs_loss(self.confidences, self.custom_losses, self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
