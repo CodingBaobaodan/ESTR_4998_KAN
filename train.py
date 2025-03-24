@@ -733,7 +733,6 @@ if __name__ == '__main__':
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.data_split[2])
 
-    global total_trading_days
 
     for symbol in ticker_symbols:
         total_trading_days = 0
