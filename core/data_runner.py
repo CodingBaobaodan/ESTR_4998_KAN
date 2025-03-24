@@ -26,10 +26,9 @@ class GeneralTSFDataset(Dataset):
         norm_feature_path = os.path.join(self.data_dir, 'feature.npz')
         norm_feature = np.load(norm_feature_path)
 
-        #norm_var = norm_feature['norm_var'][:, np.array(self.indicators_bool).astype(bool)]
         norm_var = norm_feature['norm_var'][:, np.array(self.indicators_bool, dtype=bool)]
         norm_time_marker = norm_feature['norm_time_marker']
-        norm_closing = norm_feature['norm_var'][:, sum(self.indicators_bool[:-14])+4-1] # Check!
+        norm_closing = norm_feature['norm_var'][:, sum(self.indicators_bool[:-14])+4-1]
 
         border1s = [0, self.train_len, self.train_len + self.val_len]
         border2s = [self.train_len, self.train_len + self.val_len, self.train_len + self.val_len + self.test_len]
