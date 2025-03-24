@@ -12,6 +12,7 @@ class GeneralTSFDataset(Dataset):
         self.hist_len = hist_len
         self.pred_len = pred_len
         self.train_len, self.val_len, self.test_len = data_split
+        
         self.freq = freq
         self.indicators_bool = indicators_bool
 
@@ -31,7 +32,7 @@ class GeneralTSFDataset(Dataset):
         norm_closing = norm_feature['norm_var'][:, sum(self.indicators_bool[:-14])+4-1]
 
         border1s = [0, self.train_len, self.train_len + self.val_len]
-        border2s = [self.train_len, self.train_len + self.val_len, self.train_len + self.val_len + self.test_len]
+        border2s = [self.train_len, self.train_len + self.val_len, self.train_len + self.val_len + 64] #self.test_len]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
