@@ -28,6 +28,7 @@ class LTSFRunner(L.LightningModule):
 
         self.train_losses = []
         self.test_losses = []
+        self.total_testing_trading_days = []
 
     def evaluate_trading_strategy(self, predictions_tomorrow, true_prices_tomorrow, true_prices_today):
         """
@@ -45,6 +46,8 @@ class LTSFRunner(L.LightningModule):
         loss_days = 0
 
         print(f"Number of testing trading days : {len(true_prices_today)}")
+
+        self.total_testing_trading_days.append(len(true_prices_today))
         
         # Loop through predictions and actual prices
         for i in range(len(predictions_tomorrow)):  # Loop till second last day to avoid out of range on true_prices[i+1]
