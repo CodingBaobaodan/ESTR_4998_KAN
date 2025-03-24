@@ -517,6 +517,8 @@ def genetic_algorithm(training_conf, conf):
 
     pop_size = conf['population_size']
 
+    print(pop_size)
+
     for generation in range(1, 1+conf['total_generations']):
         print(f"Start Generation {generation}")
 
@@ -538,9 +540,11 @@ def genetic_algorithm(training_conf, conf):
         all_fitnesses = [ch.fitness for ch in population]
         population, pop_size = selection(population, all_fitnesses, pop_size)
 
+        print(pop_size)
+
         next_population = []
 
-        for i in range(0, pop_size, 2):
+        for i in range(0, max(pop_size, 2), 2):
             parent1 = population[i]
             parent2 = population[i + 1]
 
@@ -552,8 +556,9 @@ def genetic_algorithm(training_conf, conf):
                 child1, child2 = inter_chromosome_crossover(parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
 
             if generation != conf['total_generations'] :
-                next_population.append(mutation(child1, 0.2, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
-                next_population.append(mutation(child2, 0.2, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
+                next_population.append(mutation(child1, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
+                next_population.append(mutation(child2, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
+
 
         # Replace the old population with the new one, preserving the best individual
         next_population[0] = best_individual
@@ -703,7 +708,7 @@ if __name__ == '__main__':
     parser.add_argument("--num_workers", default=10, type=int, help="Number of workers for data loading")
 
     parser.add_argument("--population_size", default=8, type=int, help="Population Size for GA")
-    parser.add_argument("--total_generations", default=3, type=int, help="Total number of generations for GA")
+    #parser.add_argument("--total_generations", default=3, type=int, help="Total number of generations for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
@@ -719,47 +724,54 @@ if __name__ == '__main__':
     args.max_hist_len_n_bit = math.floor(math.log2( (args.max_hist_len-args.min_hist_len) / 4 + 1 ))
     args.n_hyperparameters = args.max_hist_len_n_bit + args.n_KAN_experts
 
+    args.total_generations = math.floor(math.log2(args.population_size))
+
     ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
+    start_date, end_date = '2010-01-01','2022-12-31'
 
+    for date in range(10): # TO DO 
+        read_data(start_date, end_date)
     
-    for symbol in ticker_symbols:
-        # Before GA
-        args.dataset_name = symbol
+        for symbol in ticker_symbols:
+            # Before GA
+            args.dataset_name = symbol
 
-        df = pd.read_csv(f"dataset/{symbol}/all_data.csv")
-        args.var_num = df.shape[1] - 1 # Exclude the dates column
+            df = pd.read_csv(f"dataset/{symbol}/all_data.csv")
+            args.var_num = df.shape[1] - 1 # Exclude the dates column
 
-        args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
+            args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
 
-        args.hist_len = 4
-        args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
+            args.hist_len = 4
+            args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
 
-        args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] 
+            args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] 
 
-        training_conf = {
-            "seed": int(args.seed),
-            "data_root": f"dataset/{symbol}",
-            "save_root": args.save_root,
-            "devices": args.devices,
-            "use_wandb": args.use_wandb
-        }
+            training_conf = {
+                "seed": int(args.seed),
+                "data_root": f"dataset/{symbol}",
+                "save_root": args.save_root,
+                "devices": args.devices,
+                "use_wandb": args.use_wandb
+            }
 
-        # GA
-        print(f"For stock {symbol}:")
-        print("Doing GA")
-        args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
+            # GA
+            print(f"For stock {symbol}:")
+            print("Doing GA")
+            args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
-        print("After GA, optimal choices: ")
-        print(args.var_num)
-        print(args.indicators_list_01)
-        print(args.hist_len)
-        print(args.hist_len_list_01)
-        print(args.KAN_experts_list_01)
+            print("After GA, optimal choices: ")
+            print(args.var_num)
+            print(args.indicators_list_01)
+            print(args.hist_len)
+            print(args.hist_len_list_01)
+            print(args.KAN_experts_list_01)
 
-        print("Optimal model is finally trained below: ")
-        trainer, data_module, model, callback = train_init(training_conf, vars(args))
-        trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
-        print("\n")
+            print("Optimal model is finally trained below: ")
+            trainer, data_module, model, callback = train_init(training_conf, vars(args))
+            trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+            print("\n")
 
-        print("Baselinee model is built: ")
-        # // Check! Baseline Model
+            print("Baselinee model is built: ")
+            # // Check! Baseline Model
+
+        start_date, end_date = '2010-01-01','2022-12-31' # TO DO 
