@@ -47,6 +47,7 @@ class LTSFRunner(L.LightningModule):
 
         print(f"Number of testing trading days : {len(true_prices_today)}")
         if self.end: 
+            global total_trading_days
             total_trading_days += len(true_prices_today)
         
         # Loop through predictions and actual prices
