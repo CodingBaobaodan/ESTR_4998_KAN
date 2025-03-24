@@ -377,7 +377,7 @@ def fitness_function(ind, training_conf, conf):
     print(f"window size: {conf['hist_len']}")
     print(conf['hist_len_list_01'])
 
-    print("Experts Taylor, Wavelet, Jacobi, Cheby, RBF, NaiveFourier", conf['args.KAN_experts_list_01']) # KAN Experts to be changed
+    print("Experts Taylor, Wavelet, Jacobi, Cheby", conf['args.KAN_experts_list_01']) # KAN Experts to be changed
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
     trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
@@ -712,7 +712,7 @@ if __name__ == '__main__':
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
-    parser.add_argument("--n_KAN_experts", default=6, type=int, help="Number of KAN experts to be used")
+    parser.add_argument("--n_KAN_experts", default=4, type=int, help="Number of KAN experts to be used")
 
     parser.add_argument("--drop", default=0.2, type=float, help="Dropout rate for input features in KAN")
 

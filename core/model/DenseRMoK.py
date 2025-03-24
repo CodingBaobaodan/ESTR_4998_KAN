@@ -128,11 +128,6 @@ class DenseRMoK(nn.Module):
             self.experts.append(JacobiKANLayer(self.hist_len, self.pred_len, degree=5))
         if self.KAN_experts_list_01[3]:
             self.experts.append(ChebyKANLayer(self.hist_len, self.pred_len, degree=4))
-        if self.KAN_experts_list_01[4]:
-            self.experts.append(RBFKANLayer(self.hist_len, self.pred_len, num_centers=10))
-        if self.KAN_experts_list_01[5]:
-            self.experts.append(NaiveFourierKANLayer(self.hist_len, self.pred_len, gridsize=300))
-
         '''
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
