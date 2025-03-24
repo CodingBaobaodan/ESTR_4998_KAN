@@ -190,15 +190,15 @@ def genetic_algorithm(training_conf, conf):
 
     pop_size = conf['population_size']
 
-    for generation in range(conf['total_generations']):
-        print(f"Start Generation {generation+1}")
+    for generation in range(1, 1+conf['total_generations']):
+        print(f"Start Generation {generation}")
 
         list_ind = [fitness_function(ind, training_conf, conf) for ind in population]
 
         table_each_generation = PrettyTable()
         table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
         table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in list(enumerate(list_ind)))
-        table_each_generation.title = f"Generation {generation+1}"
+        table_each_generation.title = f"Generation {generation}"
         print(table_each_generation)
 
         # Store the best performer of the current generation
@@ -206,7 +206,7 @@ def genetic_algorithm(training_conf, conf):
         best_performers.append((best_individual, best_individual.fitness))
         all_populations.append(population[:])
 
-        table_total_generations.add_row([generation + 1, ''.join(str(bit) for bit in best_individual.genes['features']), ''.join(str(bit) for bit in best_individual.genes['hyperparameters']), best_individual.fitness])
+        table_total_generations.add_row([generation, ''.join(str(bit) for bit in best_individual.genes['features']), ''.join(str(bit) for bit in best_individual.genes['hyperparameters']), best_individual.fitness])
 
         all_fitnesses = [ch.fitness for ch in population]
         population, pop_size = selection(population, all_fitnesses, pop_size)
@@ -218,9 +218,11 @@ def genetic_algorithm(training_conf, conf):
             parent2 = population[i + 1]
 
             if ( generation == (conf['total_generations']//2) or ((len(fg) >= 2) and (abs(fg[-1]-fg[-2]) >= 1e-3)) ):
-                parent1 = intra_chromosome_crossover(parent1, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
+                if generation != conf['total_generations'] :
+                    parent1 = intra_chromosome_crossover(parent1, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
 
-            child1, child2 = inter_chromosome_crossover(parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
+            if generation != conf['total_generations'] :
+                child1, child2 = inter_chromosome_crossover(parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
 
             if len(fg) >= 2 and (fg[-1] - fg[-2]) >= 1e-3:
                 increment = mutation_rate[generation] / (fg[-1] - fg[-2])
@@ -238,15 +240,16 @@ def genetic_algorithm(training_conf, conf):
             print(mg)
             mutation_rate.append(mg)
 
-            next_population.append(mutation(child1, mg, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
-            next_population.append(mutation(child2, mg, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
+            if generation != conf['total_generations'] :
+                next_population.append(mutation(child1, mg, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
+                next_population.append(mutation(child2, mg, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
 
         # Replace the old population with the new one, preserving the best individual
         next_population[0] = best_individual
         population = next_population
         fg.append(best_individual.fitness)
 
-        print(f"That is all for Generation {generation+1} for stock {conf['dataset_name']}")
+        print(f"That is all for Generation {generation} for stock {conf['dataset_name']}")
 
     print(table_total_generations)
 

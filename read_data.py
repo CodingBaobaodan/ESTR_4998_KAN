@@ -19,7 +19,7 @@ window = 30
 ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 
                   'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 
                   'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 
-                  'PTC']
+                  'PTC', 'JNJ']
 
 # 20 stock data
 stock_data = {}
