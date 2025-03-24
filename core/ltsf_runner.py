@@ -46,6 +46,7 @@ class LTSFRunner(L.LightningModule):
 
         print(f"Number of testing trading days : {len(true_prices_today)}")
         
+        
         # Loop through predictions and actual prices
         for i in range(len(predictions_tomorrow)):  # Loop till second last day to avoid out of range on true_prices[i+1]
             predicted_price = predictions_tomorrow[i]

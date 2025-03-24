@@ -734,50 +734,55 @@ if __name__ == '__main__':
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.test_len)
 
+    args.total_trading_days = 0 
+
     for i in range(0, max_iteration):
-        start_date, end_date = all_df.loc[i*args.test_len, "Date"],  all_df.loc[(i+1)*args.test_len, "Date"]
-        read_data(start_date, end_date)
-        print(f"Start from {start_date} and End at {end_date}:")
-        
-        for symbol in ticker_symbols:
-            # Before GA
-            args.dataset_name = symbol
+        if args.total_trading_days>=1000:
+            break
+        else:
+            start_date, end_date = all_df.loc[i*args.test_len, "Date"],  all_df.loc[(i+1)*args.test_len, "Date"]
+            read_data(start_date, end_date)
+            print(f"Start from {start_date} and End at {end_date}:")
+            
+            for symbol in ticker_symbols:
+                # Before GA
+                args.dataset_name = symbol
 
-            df = pd.read_csv(f"dataset/{symbol}/all_data/{start_date}/{end_date}.csv")
-            args.var_num = df.shape[1] - 1 # Exclude the dates column
+                df = pd.read_csv(f"dataset/{symbol}/all_data_{start_date}_{end_date}.csv")
+                args.var_num = df.shape[1] - 1 # Exclude the dates column
 
-            args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
+                args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
 
-            args.hist_len = 4
-            args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
+                args.hist_len = 4
+                args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
 
-            args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] 
+                args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] 
 
-            training_conf = {
-                "seed": int(args.seed),
-                "data_root": f"dataset/{symbol}",
-                "save_root": args.save_root,
-                "devices": args.devices,
-                "use_wandb": args.use_wandb
-            }
+                training_conf = {
+                    "seed": int(args.seed),
+                    "data_root": f"dataset/{symbol}",
+                    "save_root": args.save_root,
+                    "devices": args.devices,
+                    "use_wandb": args.use_wandb
+                }
 
-            # GA
-            print(f"For stock {symbol}:")
-            print("Doing GA")
-            args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
+                # GA
+                print(f"For stock {symbol}:")
+                print("Doing GA")
+                args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
-            print("After GA, optimal choices: ")
-            print(args.var_num)
-            print(args.indicators_list_01)
-            print(args.hist_len)
-            print(args.hist_len_list_01)
-            print(args.KAN_experts_list_01)
+                print("After GA, optimal choices: ")
+                print(args.var_num)
+                print(args.indicators_list_01)
+                print(args.hist_len)
+                print(args.hist_len_list_01)
+                print(args.KAN_experts_list_01)
 
-            print("Optimal model is finally trained below: ")
-            trainer, data_module, model, callback = train_init(training_conf, vars(args))
-            trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
-            print("\n")
+                print("Optimal model is finally trained below: ")
+                trainer, data_module, model, callback = train_init(training_conf, vars(args))
+                trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+                print("\n")
 
-            print("Baselinee model is built: ")
-            # // Check! Baseline Model
+                print("Baselinee model is built: ")
+                # // Check! Baseline Model
 
