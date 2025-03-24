@@ -495,7 +495,7 @@ def mutation(chromosome, mutation_rate, n_features, max_hist_len_n_bit, n_KAN_ex
         for gene in chromosome.genes['hyperparameters']
     ]
     '''
-    
+
     chromosome.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1]
 
     if sum(chromosome.genes['hyperparameters'][max_hist_len_n_bit:])==0:
@@ -519,8 +519,6 @@ def genetic_algorithm(training_conf, conf):
 
     pop_size = conf['population_size']
 
-    print(pop_size)
-
     for generation in range(1, 1+conf['total_generations']):
         print(f"Start Generation {generation}")
 
@@ -542,11 +540,10 @@ def genetic_algorithm(training_conf, conf):
         all_fitnesses = [ch.fitness for ch in population]
         population, pop_size = selection(population, all_fitnesses, pop_size)
 
-        print(pop_size)
-
         next_population = []
 
         for i in range(0, max(pop_size, 2), 2):
+            print(len(population))
             parent1 = population[i]
             parent2 = population[i + 1]
 
@@ -710,7 +707,6 @@ if __name__ == '__main__':
     parser.add_argument("--num_workers", default=10, type=int, help="Number of workers for data loading")
 
     parser.add_argument("--population_size", default=8, type=int, help="Population Size for GA")
-    #parser.add_argument("--total_generations", default=3, type=int, help="Total number of generations for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
