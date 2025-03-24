@@ -11,14 +11,15 @@ from pre_selection import *
 import gc
 gc.collect()
 
+
+
 start_date, end_date = '2010-01-01','2022-12-31'
 window = 30
 
-# 20 stock symbols
 ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 
                   'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 
                   'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 
-                  'PTC', 'WDC']
+                  'PTC']
 
 # 20 stock data
 stock_data = {}
@@ -239,12 +240,11 @@ macro_df_commidities = macro_df_commidities.resample('D').ffill().ffill().bfill(
 
 
 
-ticker_symbols = ['^GSPC'] #, '^SP500-45']  # S&P 500 Index and S&P 500 IT Sector Index
-
+index_ticker_symbols = ['^GSPC']
 index_data = {}
 
 # Fetch OHLCV data for each ticker
-for ticker_symbol in ticker_symbols:
+for ticker_symbol in index_ticker_symbols:
     ticker = yf.Ticker(ticker_symbol)
     index_series = ticker.history(
         start=start_date,
@@ -293,13 +293,6 @@ index_df.to_csv(f"{output_dir}/index_df.csv", index=True)
 
 cap_weighted_composite_index_df = cap_weighted_composite_index(stock_df)
 top_k_correlations = cap_weighted_correlation_plots(cap_weighted_composite_index_df, macro_df, k=10) # Check!
-
-
-
-ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 
-                  'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 
-                  'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 
-                  'PTC', 'WDC']
 
 
 for stock in ticker_symbols:
