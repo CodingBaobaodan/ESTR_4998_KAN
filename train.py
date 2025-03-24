@@ -731,9 +731,11 @@ if __name__ == '__main__':
     ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
 
     df = pd.read_csv("dataset/AAPL/all_data.csv")
-    start_date, end_date = df.loc[0, "Date"],  df.loc[0+args.test_len, "Date"]
+    #start_date, end_date = df.loc[0, "Date"],  df.loc[0+args.test_len, "Date"]
+    start_date, end_date = '2010-01-01','2022-12-31'
 
-    for i in range(1, 11): # TO DO 
+
+    for i in range(1, 2): # TO DO 
         print(f"Start from {start_date} and End at {end_date}:")
         read_data(start_date, end_date)
     
@@ -779,4 +781,5 @@ if __name__ == '__main__':
             print("Baselinee model is built: ")
             # // Check! Baseline Model
 
-        start_date, end_date = df.loc[i*args.test_len, "Date"],  df.loc[(i+1)*args.test_len, "Date"]
+        start_date, end_date = '2010-01-01','2022-12-31'
+        # start_date, end_date = df.loc[i*args.test_len, "Date"],  df.loc[(i+1)*args.test_len, "Date"]
