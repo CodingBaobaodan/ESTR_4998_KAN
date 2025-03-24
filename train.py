@@ -735,6 +735,7 @@ if __name__ == '__main__':
 
 
     for symbol in ticker_symbols:
+        global total_trading_days
         total_trading_days = 0
 
         for i in range(0, max_iteration):
