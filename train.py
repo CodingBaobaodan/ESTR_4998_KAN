@@ -213,7 +213,7 @@ def genetic_algorithm(training_conf, conf):
 
         next_population = []
 
-        for i in range(0, len(population), 2):
+        for i in range(0, pop_size, 2):
             parent1 = population[i]
             parent2 = population[i + 1]
 
@@ -362,9 +362,6 @@ def train_func(trainer, data_module, model, callback):
     return trainer, data_module, model, callback.get_last_test_loss()
 
 
-ticker_symbols = ['AAPL', 'MSFT']
-#, 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'WDC']
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -391,9 +388,9 @@ if __name__ == '__main__':
     parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience") # // Not used
     parser.add_argument("--num_workers", default=10, type=int, help="Number of workers for data loading")
 
-    parser.add_argument("--population_size", default=16, type=int, help="Population Size for GA")
-    parser.add_argument("--total_generations", default=4, type=int, help="Total number of generations for GA")
-    parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") # // Check!
+    parser.add_argument("--population_size", default=8, type=int, help="Population Size for GA")
+    parser.add_argument("--total_generations", default=2, type=int, help="Total number of generations for GA")
+    parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
     parser.add_argument("--n_KAN_experts", default=6, type=int, help="Number of KAN experts to be used")
@@ -402,16 +399,13 @@ if __name__ == '__main__':
 
     parser.add_argument("--pred_len", default=1, type=int, help="Number of predicted made each time (should be fixed)")
     parser.add_argument("--data_split", default=[2000, 0, 500], type=list, help="Train-Val-Test Ratio (Val should be fixed to 0)")
-    parser.add_argument("--freq", default=1440, type=int, help="(should be fixed)") # // Check!
-
-    '''
-    script_name = 'read_data.py'
-    _ = subprocess.run(['python', script_name], capture_output=True, text=True)'
-    '''
+    parser.add_argument("--freq", default=1440, type=int, help="(should be fixed)") 
 
     args = parser.parse_args()
     args.max_hist_len_n_bit = math.floor(math.log2( (args.max_hist_len-args.min_hist_len) / 4 + 1 ))
     args.n_hyperparameters = args.max_hist_len_n_bit + args.n_KAN_experts
+
+    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC']
     
     for symbol in ticker_symbols:
         # Before GA
