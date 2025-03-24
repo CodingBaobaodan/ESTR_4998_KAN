@@ -389,7 +389,7 @@ if __name__ == '__main__':
     parser.add_argument("--num_workers", default=10, type=int, help="Number of workers for data loading")
 
     parser.add_argument("--population_size", default=8, type=int, help="Population Size for GA")
-    parser.add_argument("--total_generations", default=2, type=int, help="Total number of generations for GA")
+    parser.add_argument("--total_generations", default=4, type=int, help="Total number of generations for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
@@ -442,8 +442,8 @@ if __name__ == '__main__':
         print(args.KAN_experts_list_01)
 
         print("Optimal model is finally trained below: ")
-        trainer, data_module, model = train_init(training_conf, vars(args))
-        trainer, data_module, model = train_func(trainer, data_module, model)
+        trainer, data_module, model, callback = train_init(training_conf, vars(args))
+        trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
         print("\n")
 
         print("Baselinee model is built: ")
