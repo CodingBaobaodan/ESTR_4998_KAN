@@ -32,7 +32,7 @@ seed_value = 4999
 random.seed(seed_value)
 
 def read_data(start_date, end_date):
-    window = 30
+    #window = 30
 
     ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 
                     'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 
@@ -75,7 +75,7 @@ def read_data(start_date, end_date):
 
     stock_df = pd.concat(stock_data, axis=1)
     stock_df.index = pd.to_datetime(stock_df.index)
-    stock_df = stock_df.iloc[window:]
+    #stock_df = stock_df.iloc[window:]
 
 
 
@@ -279,13 +279,13 @@ def read_data(start_date, end_date):
 
     index_df = pd.concat(index_data, axis=1)
     index_df.index = pd.to_datetime(index_df.index)
-    index_df = index_df.iloc[window:]
+    #index_df = index_df.iloc[window:]
 
 
 
     stock_indicators_df = stock_indicators_df.ffill().ffill().bfill()
     stock_indicators_df.index = stock_indicators_df.index.strftime('%d/%m/%Y')
-    stock_indicators_df = stock_indicators_df.iloc[window:]
+    #stock_indicators_df = stock_indicators_df.iloc[window:]
 
     macro_df_fred = macro_df_fred.reindex(stock_df.index).ffill().bfill()
     macro_df_fred.index = macro_df_fred.index.strftime('%d/%m/%Y')
@@ -729,7 +729,7 @@ if __name__ == '__main__':
     args.test_len = args.data_split[2]
 
     ticker_symbols = ['AAPL'] #, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
-    start_date, end_date = '2010-01-01','2022-12-31'
+    # start_date, end_date = '2010-02-17','2022-12-30'
     
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.test_len)
