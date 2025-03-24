@@ -635,7 +635,7 @@ class TestLossLoggerCallback(Callback):
         return self.test_losses[-1]
     
     def get_trading_days(self):
-        return self.trading_days[-1]
+        return 0
 
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
