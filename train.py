@@ -617,7 +617,7 @@ class TestLossLoggerCallback(Callback):
     def __init__(self):
         super().__init__()
         self.test_losses = []
-        self.trading_days = 0
+        self.trading_days = []
 
     def on_test_epoch_end(self, trainer, pl_module):
         avg_loss = trainer.callback_metrics.get('test/custom_loss')
@@ -627,15 +627,14 @@ class TestLossLoggerCallback(Callback):
             print(f", Average Test Loss = {avg_loss.item():.4f}")
 
         trading_days = trainer.callback_metrics.get('test/number of testing trading days')
-        self.trading_days = trading_days
+        self.trading_days.append(int(trading_days))
+        print(self.trading_days)
         
     def get_last_test_loss(self):
         return self.test_losses[-1]
     
     def get_trading_days(self):
-        print(self.trading_days)
-        print(type(self.trading_days))
-        return self.trading_days
+        return self.trading_days[-1]
 
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
