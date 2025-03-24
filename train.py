@@ -303,10 +303,10 @@ def read_data(start_date, end_date):
 
     output_dir = 'csv'
     os.makedirs(output_dir, exist_ok=True)
-    stock_df.to_csv(f"{output_dir}/stock_df.csv", index=True)
-    stock_indicators_df.to_csv(f"{output_dir}/stock_indicators_df.csv", index=True)
-    macro_df.to_csv(f"{output_dir}/macro_df.csv", index=True)
-    index_df.to_csv(f"{output_dir}/index_df.csv", index=True)
+    stock_df.to_csv(f"{output_dir}/stock_df/{start_date}/{end_date}.csv", index=True)
+    stock_indicators_df.to_csv(f"{output_dir}/stock_indicators_df/{start_date}/{end_date}.csv", index=True)
+    macro_df.to_csv(f"{output_dir}/macro_df/{start_date}/{end_date}.csv", index=True)
+    index_df.to_csv(f"{output_dir}/index_df/{start_date}/{end_date}.csv", index=True)
 
 
     cap_weighted_composite_index_df = cap_weighted_composite_index(stock_df)
@@ -330,7 +330,7 @@ def read_data(start_date, end_date):
         max_val = combined_data.max()
 
         # Ensure the output directory exists
-        output_dir = f"dataset/{stock}"
+        output_dir = f"dataset/{stock}/{start_date}/{end_date}"
         os.makedirs(output_dir, exist_ok=True)
 
         # Save scaling information using min and max values
@@ -349,7 +349,7 @@ def read_data(start_date, end_date):
         # Save the final combined data and normalized time markers
         np.savez(os.path.join(output_dir, f'feature.npz'), norm_var=combined_data.values, norm_time_marker=norm_time_marker)
 
-        combined_data.to_csv(f"{output_dir}/all_data.csv", index=True)
+        combined_data.to_csv(f"{output_dir}/all_data/{start_date}/{end_date}.csv", index=True)
 
 # Define a basic structure for Chromosome and Population
 class Chromosome:
@@ -586,6 +586,7 @@ def genetic_algorithm(training_conf, conf):
     plt.title(f'Fitness Over Generations for {conf["dataset_name"]}')
     plt.legend()
     plt.savefig(f'plots/GA_{conf["dataset_name"]}.png')
+    plt.close()
 
 
     best_ch = max(population, key=lambda ch: ch.fitness) 
@@ -727,23 +728,22 @@ if __name__ == '__main__':
     args.total_generations = math.floor(math.log2(args.population_size))
     args.test_len = args.data_split[2]
 
-    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
+    ticker_symbols = ['AAPL'] #, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
     start_date, end_date = '2010-01-01','2022-12-31'
-    read_data(start_date, end_date)
-
+    
     all_df = pd.read_csv("dataset/data_for_dates.csv")
-    max_length = all_df.shape[0] # 3242 
-    max_iteration = math.floor(max_length // args.test_len) # 3242 / 100
+    max_iteration = math.floor(3242 // args.test_len)
 
     for i in range(0, max_iteration):
         start_date, end_date = all_df.loc[i*args.test_len, "Date"],  all_df.loc[(i+1)*args.test_len, "Date"]
+        read_data(start_date, end_date)
         print(f"Start from {start_date} and End at {end_date}:")
         
         for symbol in ticker_symbols:
             # Before GA
             args.dataset_name = symbol
 
-            df = pd.read_csv(f"dataset/{symbol}/all_data.csv")
+            df = pd.read_csv(f"dataset/{symbol}/all_data/{start_date}/{end_date}.csv")
             args.var_num = df.shape[1] - 1 # Exclude the dates column
 
             args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
