@@ -49,7 +49,7 @@ def fitness_function(ind, training_conf, conf):
     print(f"window size: {conf['hist_len']}")
     print(conf['hist_len_list_01'])
 
-    print("Experts Taylor, Wavelet, Jacobi, Cheby, RBF, NaiveFourier", conf['args.KAN_experts_list_01'])
+    print("Experts Taylor, Wavelet, Jacobi, Cheby, RBF, NaiveFourier", conf['args.KAN_experts_list_01']) # KAN Experts to be changed
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
     trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
@@ -362,7 +362,6 @@ def train_func(trainer, data_module, model, callback):
     return trainer, data_module, model, callback.get_last_test_loss()
 
 
-
 ticker_symbols = ['AAPL', 'MSFT']
 #, 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'WDC']
 
@@ -421,12 +420,12 @@ if __name__ == '__main__':
         df = pd.read_csv(f"dataset/{symbol}/all_data.csv")
         args.var_num = df.shape[1] - 1 # Exclude the dates column
 
-        args.indicators_list_01 = [1 for i in range(args.total_n_features)] # // Check!
+        args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
 
         args.hist_len = 4
         args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
 
-        args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] # Ordering: T, W, J, C, R, N
+        args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] 
 
         training_conf = {
             "seed": int(args.seed),

@@ -96,8 +96,6 @@ class RevIN(nn.Module):
         # print("Selected closing price data:", x)
         return x
 
-    
-        
     def set_statistics(self, min_val, max_val):
         self.min_val = min_val
         self.max_val = max_val
@@ -119,6 +117,9 @@ class DenseRMoK(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
         self.experts = nn.ModuleList([])
+
+        # KAN Experts to be changed
+
         if self.KAN_experts_list_01[0]:
             self.experts.append(TaylorKANLayer(self.hist_len, self.pred_len, order=3, addbias=True))
         if self.KAN_experts_list_01[1]:
