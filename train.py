@@ -547,7 +547,7 @@ def genetic_algorithm(training_conf, conf):
                 parent1 = population[i]
                 parent2 = population[i + 1]
             else: 
-                pass
+                next_population.append(population[i])
 
             if ( generation == (conf['total_generations']//2) or ((len(fg) >= 2) and (abs(fg[-1]-fg[-2]) >= 1e-3)) ):
                 if generation != conf['total_generations'] :
