@@ -733,7 +733,7 @@ if __name__ == '__main__':
     args.n_hyperparameters = args.max_hist_len_n_bit + args.n_KAN_experts
 
     args.total_generations = math.floor(math.log2(args.population_size))
-    args.mov_forward = args.data_split[2]
+    args.mov_forward = sum(args.data_split)
 
     ticker_symbols = ['AAPL'] #, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
     # start_date, end_date = '2010-02-17','2022-12-30'
