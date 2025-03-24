@@ -488,12 +488,14 @@ def mutation(chromosome, mutation_rate, n_features, max_hist_len_n_bit, n_KAN_ex
         for gene in chromosome.genes['features']
     ]
 
+    '''
     # Mutate hyperparameters
     chromosome.genes['hyperparameters'] = [
         abs(gene - 1) if random.random() < mutation_rate else gene
         for gene in chromosome.genes['hyperparameters']
     ]
-
+    '''
+    
     chromosome.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1]
 
     if sum(chromosome.genes['hyperparameters'][max_hist_len_n_bit:])==0:
