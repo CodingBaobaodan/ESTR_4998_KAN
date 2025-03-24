@@ -401,7 +401,7 @@ if __name__ == '__main__':
     parser.add_argument("--drop", default=0.2, type=float, help="Dropout rate for input features in KAN")
 
     parser.add_argument("--pred_len", default=1, type=int, help="Number of predicted made each time (should be fixed)")
-    parser.add_argument("--data_split", default=[2000, 0, 30], type=list, help="Train-Val-Test Ratio (Val should be fixed to 0)")
+    parser.add_argument("--data_split", default=[2000, 0, 20], type=list, help="Train-Val-Test Ratio (Val should be fixed to 0)")
     parser.add_argument("--freq", default=1440, type=int, help="(should be fixed)") # // Check!
 
     '''
