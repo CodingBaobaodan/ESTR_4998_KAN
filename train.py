@@ -330,7 +330,7 @@ def read_data(start_date, end_date):
         max_val = combined_data.max()
 
         # Ensure the output directory exists
-        output_dir = f"dataset/{stock}_{start_date}_{end_date}"
+        output_dir = f"dataset/{stock}"
         os.makedirs(output_dir, exist_ok=True)
 
         # Save scaling information using min and max values
