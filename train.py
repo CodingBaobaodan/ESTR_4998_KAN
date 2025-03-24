@@ -714,7 +714,7 @@ if __name__ == '__main__':
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
     parser.add_argument("--n_KAN_experts", default=4, type=int, help="Number of KAN experts to be used")
-
+    parser.add_argument("--end", default=False, type=bool, help="Whether this chromosome is at end of generation")
     parser.add_argument("--drop", default=0.2, type=float, help="Dropout rate for input features in KAN")
 
     parser.add_argument("--pred_len", default=1, type=int, help="Number of predicted made each time (should be fixed)")
@@ -786,11 +786,15 @@ if __name__ == '__main__':
                 print(args.KAN_experts_list_01)
 
                 print("Optimal model is finally trained below: ")
+                args.end = True
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
                 print(total_trading_days)
+                args.end = False
                 print("\n")
 
                 print("Baselinee model is built: ")
                 # // Check! Baseline Model
+
+                
 
