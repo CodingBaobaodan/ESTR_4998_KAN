@@ -425,6 +425,7 @@ def selection(population, all_fitnesses, pop_size, tournament_size=3):
 
     return selected, pop_size
 
+'''
 def intra_chromosome_crossover(ch1, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts):
     n = min(n_features, n_hyperparameters)
 
@@ -447,6 +448,7 @@ def intra_chromosome_crossover(ch1, n_features, n_hyperparameters, max_hist_len_
         ch1.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
     return ch1
+'''
 
 def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts):
 
@@ -502,7 +504,7 @@ def genetic_algorithm(training_conf, conf):
     all_populations = []
 
     # Initialize mutation_rate and fg lists with initial values
-    fg = [0] 
+    #fg = [0] 
 
     # Prepare for table
     table_total_generations = PrettyTable()
@@ -540,10 +542,12 @@ def genetic_algorithm(training_conf, conf):
             else: 
                 next_population.append(population[i])
                 break
-
+            
+            '''
             if ( generation == (conf['total_generations']//2) or ((len(fg) >= 2) and (abs(fg[-1]-fg[-2]) >= 1e-1)) ):
                 if generation != conf['total_generations'] :
                     parent1 = intra_chromosome_crossover(parent1, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
+            '''
 
             if generation != conf['total_generations'] :
                 child1, child2 = inter_chromosome_crossover(parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
@@ -556,7 +560,7 @@ def genetic_algorithm(training_conf, conf):
         # Replace the old population with the new one, preserving the best individual
         next_population[0] = best_individual
         population = next_population
-        fg.append(best_individual.fitness)
+        # fg.append(best_individual.fitness)
 
     print(table_total_generations)
 
