@@ -4,7 +4,7 @@ import matplotlib.dates as mdates
 import seaborn as sb
 
 
-def cap_weighted_composite_index(stock_df):
+def cap_weighted_composite_index(stock_df, start_end_string):
 
     closing_prices = stock_df.xs('Close', level=1, axis=1)
     volumes = stock_df.xs('Volume', level=1, axis=1)
@@ -24,16 +24,15 @@ def cap_weighted_composite_index(stock_df):
     # Create a DataFrame for the composite index
     cap_weighted_composite_index_df = pd.DataFrame({'Cap Weighted Composite_Index': cap_weighted_composite_index})
     output_dir = 'csv'
-    cap_weighted_composite_index_df.to_csv(f"{output_dir}/cap_weighted_composite_index_df.csv", index=True)
+    cap_weighted_composite_index_df.to_csv(f"{output_dir}/cap_weighted_composite_index_df_{start_date}_{end_date}.csv", index=True)
 
-    output_dir = 'plots'
+    output_dir = f"{start_end_string}/plots"
     # Plot the composite index
     plt.figure(figsize=(12, 6))
     plt.plot(cap_weighted_composite_index_df.index, cap_weighted_composite_index_df['Cap Weighted Composite_Index'], label="Cap Weighted Composite Index", color='blue', linewidth=2)
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=30))
-    plt.gca().xaxis.set_tick_params(rotation=30)
-    plt.title("Cap Weighted Composite Index of 20 Stocks")
+    plt.xticks([cap_weighted_composite_index_df.index[0], cap_weighted_composite_index_df.index[-1]])
+    plt.title(f"Cap Weighted Composite Index of 20 Stocks ({start_end_string})")
     plt.xlabel("Date")
     plt.ylabel("Index Value")
     plt.legend()
@@ -43,7 +42,7 @@ def cap_weighted_composite_index(stock_df):
     return cap_weighted_composite_index_df
 
 
-def cap_weighted_correlation_plots(composite_index_df, macro_df, k):
+def cap_weighted_correlation_plots(composite_index_df, macro_df, start_end_string, k):
     # Concatenate dataframes and calculate correlation
     correlation_df = pd.concat([composite_index_df, macro_df], axis=1).corr()
     
@@ -54,7 +53,7 @@ def cap_weighted_correlation_plots(composite_index_df, macro_df, k):
     top_k_correlations = abs_correlation.sort_values(ascending=False).head(k)
 
     # Set output directory for plots
-    output_dir = 'plots'
+    output_dir = f"{start_end_string}/plots"
     plt.figure(figsize=(20, 15))
     
     # Create the heatmap
@@ -66,7 +65,7 @@ def cap_weighted_correlation_plots(composite_index_df, macro_df, k):
     plt.close()
 
     # Set output directory for CSV
-    output_dir = 'csv'
+    output_dir = f"{start_end_string}/csv"
     correlation_df.to_csv(f"{output_dir}/cap_weighted_correlation_df.csv", index=True)
 
     return top_k_correlations

@@ -31,8 +31,20 @@ gc.collect()
 seed_value = 4999
 random.seed(seed_value)
 
+class color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
 def read_data(start_date, end_date):
-    #window = 30
+    start_end_string = f"{start_date}_{end_date}"
 
     ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 
                     'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 
@@ -42,7 +54,7 @@ def read_data(start_date, end_date):
     # 20 stock data
     stock_data = {}
 
-    output_dir = 'plots'
+    output_dir = f"{start_end_string}/plots"
     os.makedirs(output_dir, exist_ok=True)
 
     # 20 stocks, OHLCV
@@ -72,13 +84,8 @@ def read_data(start_date, end_date):
         print(f"Plot saved in the directory: {output_dir}/{ticker_symbol}_plot.png")
         '''
         
-
     stock_df = pd.concat(stock_data, axis=1)
     stock_df.index = pd.to_datetime(stock_df.index)
-    #stock_df = stock_df.iloc[window:]
-
-
-
 
     # 20 stocks' 31 indicators (without OHLCV) data
     stock_indicators_data = {}
@@ -279,13 +286,10 @@ def read_data(start_date, end_date):
 
     index_df = pd.concat(index_data, axis=1)
     index_df.index = pd.to_datetime(index_df.index)
-    #index_df = index_df.iloc[window:]
-
 
 
     stock_indicators_df = stock_indicators_df.ffill().ffill().bfill()
     stock_indicators_df.index = stock_indicators_df.index.strftime('%d/%m/%Y')
-    #stock_indicators_df = stock_indicators_df.iloc[window:]
 
     macro_df_fred = macro_df_fred.reindex(stock_df.index).ffill().bfill()
     macro_df_fred.index = macro_df_fred.index.strftime('%d/%m/%Y')
@@ -298,19 +302,19 @@ def read_data(start_date, end_date):
 
     stock_df.index = stock_df.index.strftime('%d/%m/%Y')
 
-
     macro_df = pd.concat([macro_df_fred, macro_df_commidities], axis=1)
 
-    output_dir = 'csv'
+    output_dir = f"{start_end_string}/csv"
     os.makedirs(output_dir, exist_ok=True)
-    stock_df.to_csv(f"{output_dir}/stock_df_{start_date}_{end_date}.csv", index=True)
-    stock_indicators_df.to_csv(f"{output_dir}/stock_indicators_df_{start_date}_{end_date}.csv", index=True)
-    macro_df.to_csv(f"{output_dir}/macro_df_{start_date}_{end_date}.csv", index=True)
-    index_df.to_csv(f"{output_dir}/index_df_{start_date}_{end_date}.csv", index=True)
+
+    stock_df.to_csv(f"{output_dir}/stock_df.csv", index=True)
+    stock_indicators_df.to_csv(f"{output_dir}/stock_indicators_df.csv", index=True)
+    macro_df.to_csv(f"{output_dir}/macro_df.csv", index=True)
+    index_df.to_csv(f"{output_dir}/index_df.csv", index=True)
 
 
-    cap_weighted_composite_index_df = cap_weighted_composite_index(stock_df)
-    top_k_correlations = cap_weighted_correlation_plots(cap_weighted_composite_index_df, macro_df, k=10) 
+    cap_weighted_composite_index_df = cap_weighted_composite_index(stock_df, start_end_string)
+    top_k_correlations = cap_weighted_correlation_plots(cap_weighted_composite_index_df, macro_df, start_end_string, k=10) 
 
 
     for stock in ticker_symbols:
@@ -325,12 +329,11 @@ def read_data(start_date, end_date):
             macro_df[top_k_correlations.index[1:]]  
         ], axis=1)
 
-        # Calculate min and max across all columns for min-max normalization
         min_val = combined_data.min()
         max_val = combined_data.max()
 
         # Ensure the output directory exists
-        output_dir = f"dataset/{stock}"
+        output_dir = f"{start_end_string}/dataset/{stock}"
         os.makedirs(output_dir, exist_ok=True)
 
         # Save scaling information using min and max values
@@ -349,7 +352,7 @@ def read_data(start_date, end_date):
         # Save the final combined data and normalized time markers
         np.savez(os.path.join(output_dir, f'feature.npz'), norm_var=combined_data.values, norm_time_marker=norm_time_marker)
 
-        combined_data.to_csv(f"{output_dir}/all_data_{start_date}_{end_date}.csv", index=True)
+        combined_data.to_csv(f"{output_dir}/all_data.csv", index=True)
 
 class Chromosome:
     def __init__(self, features, hyperparameters):
@@ -693,7 +696,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_wandb", default=0, type=int, help="use wandb")
     parser.add_argument("--seed", type=int, default=1, help="seed")
     parser.add_argument("--model_name", default="DenseRMoK", type=str, help="Model name")
-    parser.add_argument("--revin_affine", default=False, type=bool, help="Use revin affine") # // Check!
+    parser.add_argument("--revin_affine", default=False, type=bool, help="Use revin affine") 
 
     parser.add_argument("--lr", default=0.001, type=float, help="Learning rate")
     parser.add_argument("--batch_size", default=64, type=int, help="Batch size")
@@ -724,31 +727,28 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.max_hist_len_n_bit = math.floor(math.log2( (args.max_hist_len-args.min_hist_len) / 4 + 1 ))
     args.n_hyperparameters = args.max_hist_len_n_bit + args.n_KAN_experts
-
     args.total_generations = math.floor(math.log2(args.population_size))
 
-    ticker_symbols = ['AAPL'] #, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
-    # start_date, end_date = '2010-02-17','2022-12-30'
+    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
     
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.data_split[2])
 
-
     for symbol in ticker_symbols:
+        print(f"Start for stock {color.BOLD}{symbol}{color.END}:")
         total_check = 0
+
         for i in range(0, max_iteration):
             if total_check>=1000:
+                print(f"End for stock {color.BOLD}{symbol}{color.END}")
                 break
             else:
-                if i==0:
-                    start_index, end_index = 0, sum(args.data_split)
-                    start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
-                else: 
-                    start_index, end_index = start_index + args.data_split[2], end_index + args.data_split[2]
-                    start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
+
+                start_index, end_index = (0, sum(args.data_split)) if i == 0 else (start_index + args.data_split[2], end_index + args.data_split[2])
+                start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
 
                 read_data(start_date, end_date)
-                print(f"Start from {start_date} and End at {end_date}:")
+                print(f"From {color.BOLD}{start_date}{color.END} To {color.BOLD}{end_date}{color.END}:")
 
                 # Before GA
                 args.dataset_name = symbol
@@ -772,7 +772,6 @@ if __name__ == '__main__':
                 }
 
                 # GA
-                print(f"For stock {symbol}:")
                 print("Doing GA")
                 args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
@@ -792,6 +791,8 @@ if __name__ == '__main__':
 
                 print("Baselinee model is built: ")
                 # // Check! Baseline Model
+
+        print(f"End for stock {color.BOLD}{symbol}{color.END}")
 
                 
 
