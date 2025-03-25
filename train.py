@@ -751,7 +751,7 @@ if __name__ == '__main__':
                     start_index, end_index = 0, sum(args.data_split)
                     start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
                 else: 
-                    start_index, end_index = end_index+1, start_index + args.data_split[2]
+                    start_index, end_index = start_index + args.data_split[2], end_index + args.data_split[2]
                     start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
 
                 read_data(start_date, end_date)
