@@ -22,10 +22,6 @@ class LTSFRunner(L.LightningModule):
         self.indicators_bool = kargs['indicators_list_01']
         self.dataset_name = kargs['dataset_name']
 
-        # stat = np.load(os.path.join(self.hparams.data_root, 'var_scaler_info.npz'))
-        # self.register_buffer('min', torch.tensor(stat['min'][np.array(self.indicators_bool).astype(bool)]).float())
-        # self.register_buffer('max', torch.tensor(stat['max'][np.array(self.indicators_bool).astype(bool)]).float())
-
         self.train_losses = []
         self.test_losses = []
 
