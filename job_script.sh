@@ -3,5 +3,7 @@
 #SBATCH --mail-user=tyip1@cse.cuhk.edu.hk
 #SBATCH --mail-type=ALL
 #SBATCH --gres=gpu:1
+#SBATCH --partition=gpu_8h            
+#SBATCH --qos=gpu
 
 python train.py
