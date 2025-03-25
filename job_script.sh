@@ -1,10 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=my_job     # Job name
-#SBATCH --output=output.log   # Output file
-#SBATCH --error=error.log     # Error file
-#SBATCH --partition=gpu40  # Partition name
-#SBATCH --nodes=1             # Number of nodes
-#SBATCH --ntasks=1            # Number of tasks
+#SBATCH --job-name=TEST
+#SBATCH --mail-user=tyip1@cse.cuhk.edu.hk
+#SBATCH --mail-type=ALL
+#SBATCH --gres=gpu:1
 
-# Run your program
 python train.py
