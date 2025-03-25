@@ -123,10 +123,12 @@ class DenseRMoK(nn.Module):
         if self.KAN_experts_list_01[0]:
             self.experts.append(TaylorKANLayer(self.hist_len, self.pred_len, order=3, addbias=True))
         if self.KAN_experts_list_01[1]:
-            self.experts.append(WaveKANLayer(self.hist_len, self.pred_len, wavelet_type="mexican_hat", device="cuda"))
+            self.experts.append(WaveKANLayer(self.hist_len, self.pred_len, wavelet_type="morlet", device="cuda"))
         if self.KAN_experts_list_01[2]:
-            self.experts.append(JacobiKANLayer(self.hist_len, self.pred_len, degree=5))
+            self.experts.append(WaveKANLayer(self.hist_len, self.pred_len, wavelet_type="mexican_hat", device="cuda"))
         if self.KAN_experts_list_01[3]:
+            self.experts.append(JacobiKANLayer(self.hist_len, self.pred_len, degree=5))
+        if self.KAN_experts_list_01[4]:
             self.experts.append(ChebyKANLayer(self.hist_len, self.pred_len, degree=4))
         '''
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
