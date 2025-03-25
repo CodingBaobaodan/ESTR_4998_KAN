@@ -379,7 +379,7 @@ def fitness_function(ind, training_conf, conf):
     print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['args.KAN_experts_list_01']) # KAN Experts to be changed
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
-    trainer, data_module, model, test_loss, _ = train_func(trainer, data_module, model, callback)
+    trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
 
     ind.fitness = -1 * test_loss # min MSE == max -MSE 
 
@@ -617,7 +617,6 @@ class TestLossLoggerCallback(Callback):
     def __init__(self):
         super().__init__()
         self.test_losses = []
-        self.total_testing_trading_days = []
 
     def on_test_epoch_end(self, trainer, pl_module):
         avg_loss = trainer.callback_metrics.get('test/custom_loss')
@@ -626,15 +625,9 @@ class TestLossLoggerCallback(Callback):
             self.test_losses.append(avg_loss.item())
             print(f", Average Test Loss = {avg_loss.item():.4f}")
 
-        total_testing_trading_days = trainer.callback_metrics.get('test/total_testing_trading_days')
-        print("Callback:", total_testing_trading_days)
-        self.total_testing_trading_days.append(total_testing_trading_days)
-
     def get_last_test_loss(self):
         return self.test_losses[-1]
     
-    def get_total_testing_trading_days(self):
-        return self.total_testing_trading_days[-1]
 
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
@@ -688,7 +681,7 @@ def train_func(trainer, data_module, model, callback):
     model.train_plot_losses()
     model.test_plot_losses()
 
-    return trainer, data_module, model, callback.get_last_test_loss(), callback.get_total_testing_trading_days()
+    return trainer, data_module, model, callback.get_last_test_loss()
 
 
 if __name__ == '__main__':
@@ -792,7 +785,8 @@ if __name__ == '__main__':
 
                 print("Optimal model is finally trained below: ")
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
-                trainer, data_module, model, test_loss, total_testing_trading_days = train_func(trainer, data_module, model, callback)
+                trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+                total_testing_trading_days = args.data_split[2] - args.hist_len
                 total_check += total_testing_trading_days
                 print(total_check)
                 print("\n")

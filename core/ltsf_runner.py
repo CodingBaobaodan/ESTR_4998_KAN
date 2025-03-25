@@ -28,7 +28,7 @@ class LTSFRunner(L.LightningModule):
 
         self.train_losses = []
         self.test_losses = []
-        self.total_testing_trading_days = []
+
 
     def evaluate_trading_strategy(self, predictions_tomorrow, true_prices_tomorrow, true_prices_today):
         """
@@ -46,8 +46,6 @@ class LTSFRunner(L.LightningModule):
         loss_days = 0
 
         print(f"Number of testing trading days : {len(true_prices_today)}")
-
-        self.total_testing_trading_days.append(len(true_prices_today))
         
         # Loop through predictions and actual prices
         for i in range(len(predictions_tomorrow)):  # Loop till second last day to avoid out of range on true_prices[i+1]
@@ -84,7 +82,6 @@ class LTSFRunner(L.LightningModule):
             'cumulative_return': cumulative_return - 1,  # subtract 1 to get the net return
             'loss_days': loss_days,
             'total_profits': total_profits
-            #,'total_testing_trading_days': len(true_prices_today)       
         }
         
         return evaluation_metrics
@@ -99,7 +96,6 @@ class LTSFRunner(L.LightningModule):
             self.log('test/cumulative_return', evaluation_metrics['cumulative_return'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/loss_days', evaluation_metrics['loss_days'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
-            # self.log('test/total_testing_trading_days', evaluation_metrics['total_testing_trading_days'], on_step=False, on_epoch=True, sync_dist=True)
 
             # Plot confidence vs loss
             # util.plot_confidence_vs_loss(self.confidences, self.custom_losses, self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
@@ -157,9 +153,6 @@ class LTSFRunner(L.LightningModule):
         self.log('test/mse', mse, on_step=False, on_epoch=True, sync_dist=True)
         self.log('test/custom_loss', custom_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('test/error_percentage', mean_error_percentage, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
-
-        print(prediction.shape, label.shape, true_price_today.shape)
-        self.log('test/total_testing_trading_days', len(true_price_today), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
         
         predicted_price_tomorrow = prediction.item()
         true_price_tomorrow = label.item()
