@@ -446,7 +446,6 @@ def intra_chromosome_crossover(ch1, n_features, n_hyperparameters, max_hist_len_
         index_to_set = random.randint(0, n_KAN_experts - 1)
         ch1.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
-    print("Intra Chromosome Crossover applied")
     return ch1
 
 def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts):
@@ -480,7 +479,6 @@ def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters, max_hist
         index_to_set = random.randint(0, n_KAN_experts - 1)
         ch2.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
-    print("Inter Chromosome Crossover applied")
     return ch1, ch2
 
 def mutation(chromosome, mutation_rate, n_features, max_hist_len_n_bit, n_KAN_experts):
@@ -490,21 +488,12 @@ def mutation(chromosome, mutation_rate, n_features, max_hist_len_n_bit, n_KAN_ex
         for gene in chromosome.genes['features']
     ]
 
-    '''
-    # Mutate hyperparameters
-    chromosome.genes['hyperparameters'] = [
-        abs(gene - 1) if random.random() < mutation_rate else gene
-        for gene in chromosome.genes['hyperparameters']
-    ]
-    '''
-
     chromosome.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1]
 
     if sum(chromosome.genes['hyperparameters'][max_hist_len_n_bit:])==0:
         index_to_set = random.randint(0, n_KAN_experts - 1)
         chromosome.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
-    print("Mutation applied")
     return chromosome
 
 def genetic_algorithm(training_conf, conf):
@@ -518,18 +507,18 @@ def genetic_algorithm(training_conf, conf):
     # Prepare for table
     table_total_generations = PrettyTable()
     table_total_generations.field_names = ["Generation", "Features", "Hyperparameters", "Fitness"]
+    table_total_generations.title = f"{conf['start_end_string']} for stock {conf['symbol']}"
 
     pop_size = conf['population_size']
 
     for generation in range(1, 1+conf['total_generations']):
-        print(f"Start Generation {generation}")
 
         list_ind = [fitness_function(ind, training_conf, conf) for ind in population]
 
         table_each_generation = PrettyTable()
         table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
         table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in list(enumerate(list_ind)))
-        table_each_generation.title = f"Generation {generation}"
+        table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['symbol']} "
         print(table_each_generation)
 
         # Store the best performer of the current generation
@@ -550,8 +539,9 @@ def genetic_algorithm(training_conf, conf):
                 parent2 = population[i + 1]
             else: 
                 next_population.append(population[i])
+                break
 
-            if ( generation == (conf['total_generations']//2) or ((len(fg) >= 2) and (abs(fg[-1]-fg[-2]) >= 1e-3)) ):
+            if ( generation == (conf['total_generations']//2) or ((len(fg) >= 2) and (abs(fg[-1]-fg[-2]) >= 1e-1)) ):
                 if generation != conf['total_generations'] :
                     parent1 = intra_chromosome_crossover(parent1, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
 
@@ -568,10 +558,7 @@ def genetic_algorithm(training_conf, conf):
         population = next_population
         fg.append(best_individual.fitness)
 
-        print(f"That is all for Generation {generation} for stock {conf['dataset_name']}")
-
     print(table_total_generations)
-
 
     generations_list = range(1, len(best_performers) + 1)
 
@@ -587,9 +574,8 @@ def genetic_algorithm(training_conf, conf):
     plt.ylabel('Fitness')
     plt.title(f'Fitness Over Generations for {conf["dataset_name"]}')
     plt.legend()
-    plt.savefig(f'plots/GA_{conf["dataset_name"]}.png')
+    plt.savefig(f'{conf['start_end_string']}/plots/GA_{conf["dataset_name"]}.png')
     plt.close()
-
 
     best_ch = max(population, key=lambda ch: ch.fitness) 
     var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01 = decode(best_ch, conf)
@@ -615,7 +601,6 @@ class TrainLossLoggerCallback(Callback):
             # Print the average loss for the epoch
             print(f", Average Train Loss = {avg_loss.item():.4f}")
 
-
 class TestLossLoggerCallback(Callback):
     def __init__(self):
         super().__init__()
@@ -631,7 +616,6 @@ class TestLossLoggerCallback(Callback):
     def get_last_test_loss(self):
         return self.test_losses[-1]
     
-
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
         for k, v in hyper_conf.items():
@@ -748,10 +732,9 @@ if __name__ == '__main__':
                 start_index, end_index = (0, sum(args.data_split)) if i == 0 else (start_index + args.data_split[2], end_index + args.data_split[2])
                 start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
 
-                read_data(start_date, end_date)
                 print(f"From {color.BOLD}{start_date}{color.END} To {color.BOLD}{end_date}{color.END}:")
+                read_data(start_date, end_date)
 
-                # Before GA
                 args.dataset_name = symbol
 
                 start_end_string = f"{start_date}_{end_date}"
@@ -774,26 +757,33 @@ if __name__ == '__main__':
                     "use_wandb": args.use_wandb
                 }
 
-                print("Doing GA")
+                print(args)
                 args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
-                print("After GA, optimal choices: ")
+                print("Optimal choices: ")
                 print(args.var_num)
                 print(args.indicators_list_01)
                 print(args.hist_len)
                 print(args.hist_len_list_01)
                 print(args.KAN_experts_list_01)
-
-                print("Optimal model is finally trained below: ")
+                
+                print(args)
+                
+                print("Optimal model: ")
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
                 total_testing_trading_days = args.data_split[2] - args.hist_len
                 total_check += total_testing_trading_days
                 print("\n")
 
-                print("Baselinee model is built: ")
+                print("Baseline model is built: ")
                 # // Check! Baseline Model
 
+            print("-----------------------------------------------------------")
+            print("-----------------------------------------------------------")
+            print("\n")
+            
+        
         print(f"End for stock {color.BOLD}{symbol}{color.END}")
 
                 
