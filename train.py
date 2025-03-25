@@ -626,7 +626,7 @@ class TestLossLoggerCallback(Callback):
             self.test_losses.append(avg_loss.item())
             print(f", Average Test Loss = {avg_loss.item():.4f}")
 
-        total_testing_trading_days = trainer.callback_metrics.get('test/error_percentage')
+        total_testing_trading_days = trainer.callback_metrics.get('test/total_profits')
         print(total_testing_trading_days)
         self.total_testing_trading_days.append(total_testing_trading_days)
 
