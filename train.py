@@ -574,7 +574,7 @@ def genetic_algorithm(training_conf, conf):
     plt.ylabel('Fitness')
     plt.title(f'Fitness Over Generations for {conf["dataset_name"]}')
     plt.legend()
-    plt.savefig(f'{conf['start_end_string']}/plots/GA_{conf["dataset_name"]}.png')
+    plt.savefig(f"{conf['start_end_string']}/plots/GA_{conf['dataset_name']}.png")
     plt.close()
 
     best_ch = max(population, key=lambda ch: ch.fitness) 
@@ -768,7 +768,7 @@ if __name__ == '__main__':
                 print(args.KAN_experts_list_01)
                 
                 print(args)
-                
+
                 print("Optimal model: ")
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
