@@ -5,5 +5,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --partition=gpu_8h            
 #SBATCH --qos=gpu
+#SBATCH --ntasks=1                       
+#SBATCH --cpus-per-task=1  
 
 python train.py
