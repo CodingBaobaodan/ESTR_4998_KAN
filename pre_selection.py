@@ -30,8 +30,7 @@ def cap_weighted_composite_index(stock_df, start_end_string):
     # Plot the composite index
     plt.figure(figsize=(12, 6))
     plt.plot(cap_weighted_composite_index_df.index, cap_weighted_composite_index_df['Cap Weighted Composite_Index'], label="Cap Weighted Composite Index", color='blue', linewidth=2)
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    plt.xticks([cap_weighted_composite_index_df.index[0], cap_weighted_composite_index_df.index[-1]])
+    plt.xticks([0, len(cap_weighted_composite_index_df.index) - 1], [start_end_string.split("_")[0], start_end_string.split("_")[1]])
     plt.title(f"Cap Weighted Composite Index of 20 Stocks ({start_end_string})")
     plt.xlabel("Date")
     plt.ylabel("Index Value")
