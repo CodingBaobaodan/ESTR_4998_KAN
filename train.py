@@ -373,13 +373,13 @@ def decode(ind, conf):
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
 
 def fitness_function(ind, training_conf, conf):
-    conf['var_num'], conf['indicators_list_01'], conf['hist_len'], conf['hist_len_list_01'], conf['args.KAN_experts_list_01'] = decode(ind, conf)
+    conf['var_num'], conf['indicators_list_01'], conf['hist_len'], conf['hist_len_list_01'], conf['KAN_experts_list_01'] = decode(ind, conf)
     print(f"{conf['var_num']} features are selected")
     print(conf['indicators_list_01'])
     print(f"window size: {conf['hist_len']}")
     print(conf['hist_len_list_01'])
 
-    print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['args.KAN_experts_list_01']) # KAN Experts to be changed
+    print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['KAN_experts_list_01']) # KAN Experts to be changed
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
     trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
