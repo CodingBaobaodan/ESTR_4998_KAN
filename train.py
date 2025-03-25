@@ -539,6 +539,7 @@ def genetic_algorithm(training_conf, conf):
                 parent2 = population[i + 1]
             else: 
                 next_population.append(population[i])
+                print(training_conf, conf)
                 break
 
             if ( generation == (conf['total_generations']//2) or ((len(fg) >= 2) and (abs(fg[-1]-fg[-2]) >= 1e-1)) ):
@@ -557,6 +558,8 @@ def genetic_algorithm(training_conf, conf):
         next_population[0] = best_individual
         population = next_population
         fg.append(best_individual.fitness)
+
+    print(training_conf, conf)
 
     print(table_total_generations)
 
@@ -577,9 +580,11 @@ def genetic_algorithm(training_conf, conf):
     plt.savefig(f"{conf['start_end_string']}/plots/GA_{conf['dataset_name']}.png")
     plt.close()
 
+
     best_ch = max(population, key=lambda ch: ch.fitness) 
     var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01 = decode(best_ch, conf)
 
+    print(training_conf, conf)
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
 
 
@@ -757,7 +762,6 @@ if __name__ == '__main__':
                     "use_wandb": args.use_wandb
                 }
 
-                print(args)
                 args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
                 print("Optimal choices: ")
@@ -767,9 +771,8 @@ if __name__ == '__main__':
                 print(args.hist_len_list_01)
                 print(args.KAN_experts_list_01)
                 
-                print(args)
-
                 print("Optimal model: ")
+                print(training_conf, vars(args))
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
                 total_testing_trading_days = args.data_split[2] - args.hist_len
