@@ -507,7 +507,7 @@ def genetic_algorithm(training_conf, conf):
     # Prepare for table
     table_total_generations = PrettyTable()
     table_total_generations.field_names = ["Generation", "Features", "Hyperparameters", "Fitness"]
-    table_total_generations.title = f"{conf['start_end_string']} for stock {conf['symbol']}"
+    table_total_generations.title = f"{conf['start_end_string']} for stock {conf['dataset_name']}"
 
     pop_size = conf['population_size']
 
@@ -518,7 +518,7 @@ def genetic_algorithm(training_conf, conf):
         table_each_generation = PrettyTable()
         table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
         table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in list(enumerate(list_ind)))
-        table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['symbol']} "
+        table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['dataset_name']} "
         print(table_each_generation)
 
         # Store the best performer of the current generation
