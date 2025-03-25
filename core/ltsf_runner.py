@@ -83,8 +83,8 @@ class LTSFRunner(L.LightningModule):
             'average_daily_return': avg_daily_return,
             'cumulative_return': cumulative_return - 1,  # subtract 1 to get the net return
             'loss_days': loss_days,
-            'total_profits': total_profits,
-            'total_testing_trading_days': len(true_prices_today)       
+            'total_profits': total_profits
+            #,'total_testing_trading_days': len(true_prices_today)       
         }
         
         return evaluation_metrics
@@ -99,7 +99,7 @@ class LTSFRunner(L.LightningModule):
             self.log('test/cumulative_return', evaluation_metrics['cumulative_return'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/loss_days', evaluation_metrics['loss_days'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
-            self.log('test/total_testing_trading_days', evaluation_metrics['total_testing_trading_days'], on_step=False, on_epoch=True, sync_dist=True)
+            # self.log('test/total_testing_trading_days', evaluation_metrics['total_testing_trading_days'], on_step=False, on_epoch=True, sync_dist=True)
 
             # Plot confidence vs loss
             # util.plot_confidence_vs_loss(self.confidences, self.custom_losses, self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
@@ -177,6 +177,9 @@ class LTSFRunner(L.LightningModule):
         self.true_prices_today.append(true_price_today)
         self.confidences.append(confidence_score)
         self.custom_losses.append(custom_loss.item())
+
+        self.log('test/total_testing_trading_days', len(true_price_today), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        
 
     def configure_loss(self):
         #self.loss_function = ltsf_lossfunc.MSELossWrapper(reduction='mean')
