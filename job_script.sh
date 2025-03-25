@@ -4,7 +4,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --gres=gpu:1
 #SBATCH --partition=gpu_8h            
-#SBATCH --qos=gpu
+#SBATCH --qos=normal
 #SBATCH --ntasks=1                       
 #SBATCH --cpus-per-task=1  
 
