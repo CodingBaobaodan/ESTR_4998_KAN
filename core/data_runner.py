@@ -69,7 +69,7 @@ class GeneralTSFDataset(Dataset):
 
 def data_provider(config, mode):
     return GeneralTSFDataset(
-        data_root=config['data_root'],
+        data_root=config['start_end_string'] + "/" + config['data_root'],
         hist_len=config['hist_len'],
         pred_len=config['pred_len'],
         data_split=config['data_split'],

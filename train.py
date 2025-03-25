@@ -728,6 +728,7 @@ if __name__ == '__main__':
     args.max_hist_len_n_bit = math.floor(math.log2( (args.max_hist_len-args.min_hist_len) / 4 + 1 ))
     args.n_hyperparameters = args.max_hist_len_n_bit + args.n_KAN_experts
     args.total_generations = math.floor(math.log2(args.population_size))
+    args.start_end_string = ""
 
     ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
     
@@ -754,6 +755,7 @@ if __name__ == '__main__':
                 args.dataset_name = symbol
 
                 start_end_string = f"{start_date}_{end_date}"
+                args.start_end_string = start_end_string
                 df = pd.read_csv(f"{start_end_string}/dataset/{symbol}/all_data.csv")
                 args.var_num = df.shape[1] - 1 # Exclude the dates column
 
@@ -772,7 +774,6 @@ if __name__ == '__main__':
                     "use_wandb": args.use_wandb
                 }
 
-                # GA
                 print("Doing GA")
                 args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
