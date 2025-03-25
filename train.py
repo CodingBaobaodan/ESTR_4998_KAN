@@ -724,7 +724,7 @@ if __name__ == '__main__':
         total_check = 0
 
         for i in range(0, max_iteration):
-            if total_check>=1000:
+            if total_check>=2510:
                 print(f"End for stock {color.BOLD}{symbol}{color.END}")
                 break
             else:
