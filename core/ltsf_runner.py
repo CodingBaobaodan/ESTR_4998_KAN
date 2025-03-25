@@ -158,6 +158,7 @@ class LTSFRunner(L.LightningModule):
         self.log('test/custom_loss', custom_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('test/error_percentage', mean_error_percentage, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
 
+        print(prediction.shape, label.shape, true_price_today.shape)
         self.log('test/total_testing_trading_days', len(true_price_today), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
         
         predicted_price_tomorrow = prediction.item()
