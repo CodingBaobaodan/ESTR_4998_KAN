@@ -158,6 +158,8 @@ class LTSFRunner(L.LightningModule):
         self.log('test/custom_loss', custom_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('test/error_percentage', mean_error_percentage, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
 
+        self.log('test/total_testing_trading_days', len(true_price_today), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        
         predicted_price_tomorrow = prediction.item()
         true_price_tomorrow = label.item()
         true_price_today = true_price_today.item()
@@ -178,7 +180,6 @@ class LTSFRunner(L.LightningModule):
         self.confidences.append(confidence_score)
         self.custom_losses.append(custom_loss.item())
 
-        self.log('test/total_testing_trading_days', len(true_price_today), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
         
 
     def configure_loss(self):
