@@ -24,7 +24,7 @@ def cap_weighted_composite_index(stock_df, start_end_string):
     # Create a DataFrame for the composite index
     cap_weighted_composite_index_df = pd.DataFrame({'Cap Weighted Composite_Index': cap_weighted_composite_index})
     output_dir = 'csv'
-    cap_weighted_composite_index_df.to_csv(f"{output_dir}/cap_weighted_composite_index_df_{start_date}_{end_date}.csv", index=True)
+    cap_weighted_composite_index_df.to_csv(f"{output_dir}/cap_weighted_composite_index_df.csv", index=True)
 
     output_dir = f"{start_end_string}/plots"
     # Plot the composite index
