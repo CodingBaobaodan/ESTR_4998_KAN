@@ -753,7 +753,8 @@ if __name__ == '__main__':
                 # Before GA
                 args.dataset_name = symbol
 
-                df = pd.read_csv(f"dataset/{symbol}/all_data_{start_date}_{end_date}.csv")
+                start_end_string = f"{start_date}_{end_date}"
+                df = pd.read_csv(f"{start_end_string}/dataset/{symbol}/all_data.csv")
                 args.var_num = df.shape[1] - 1 # Exclude the dates column
 
                 args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
