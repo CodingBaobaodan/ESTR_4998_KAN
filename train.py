@@ -718,7 +718,7 @@ if __name__ == '__main__':
     args.total_generations = math.floor(math.log2(args.population_size))
     args.start_end_string = ""
 
-    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
+    ticker_symbols = ['AAPL'] #, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
     
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.data_split[2])
@@ -727,7 +727,8 @@ if __name__ == '__main__':
         print(f"Start for stock {color.BOLD}{symbol}{color.END}:")
         total_check = 0
 
-        for i in range(0, max_iteration):
+        #for i in range(0, max_iteration):
+        for i in range(0, 1):
             if total_check>=2510:
                 print(f"End for stock {color.BOLD}{symbol}{color.END}")
                 break
