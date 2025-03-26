@@ -12,6 +12,7 @@ class GeneralTSFDataset(Dataset):
         self.hist_len = hist_len
         self.pred_len = pred_len
         self.train_len, self.val_len, self.test_len = data_split
+        
         self.freq = freq
         self.indicators_bool = indicators_bool
 
@@ -26,10 +27,9 @@ class GeneralTSFDataset(Dataset):
         norm_feature_path = os.path.join(self.data_dir, 'feature.npz')
         norm_feature = np.load(norm_feature_path)
 
-        #norm_var = norm_feature['norm_var'][:, np.array(self.indicators_bool).astype(bool)]
         norm_var = norm_feature['norm_var'][:, np.array(self.indicators_bool, dtype=bool)]
         norm_time_marker = norm_feature['norm_time_marker']
-        norm_closing = norm_feature['norm_var'][:, sum(self.indicators_bool[:-14])+4-1] # Check!
+        norm_closing = norm_feature['norm_var'][:, sum(self.indicators_bool[:-14])+4-1]
 
         border1s = [0, self.train_len, self.train_len + self.val_len]
         border2s = [self.train_len, self.train_len + self.val_len, self.train_len + self.val_len + self.test_len]
@@ -55,8 +55,7 @@ class GeneralTSFDataset(Dataset):
         marker_x = self.time_marker[hist_start:hist_end, ...]
 
         var_y = self.var[hist_end:pred_end, sum(self.indicators_bool[:-14])+4-1, 0]
-        #var_y = self.norm_closing[hist_end:pred_end, ...]
-        var_y = var_y[:, np.newaxis, np.newaxis]  # Shape: (pred_len, 1, 1)
+        var_y = var_y[:, np.newaxis, np.newaxis]  
         marker_y = self.time_marker[hist_end:pred_end, ...]
 
         true = self.norm_closing[:, :, np.newaxis][hist_start:hist_end, ...]
@@ -69,7 +68,7 @@ class GeneralTSFDataset(Dataset):
 
 def data_provider(config, mode):
     return GeneralTSFDataset(
-        data_root=config['data_root'],
+        data_root=config['start_end_string'] + "/" + config['data_root'],
         hist_len=config['hist_len'],
         pred_len=config['pred_len'],
         data_split=config['data_split'],

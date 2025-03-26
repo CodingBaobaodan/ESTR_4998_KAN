@@ -22,12 +22,9 @@ class LTSFRunner(L.LightningModule):
         self.indicators_bool = kargs['indicators_list_01']
         self.dataset_name = kargs['dataset_name']
 
-        # stat = np.load(os.path.join(self.hparams.data_root, 'var_scaler_info.npz'))
-        # self.register_buffer('min', torch.tensor(stat['min'][np.array(self.indicators_bool).astype(bool)]).float())
-        # self.register_buffer('max', torch.tensor(stat['max'][np.array(self.indicators_bool).astype(bool)]).float())
-
         self.train_losses = []
         self.test_losses = []
+
 
     def evaluate_trading_strategy(self, predictions_tomorrow, true_prices_tomorrow, true_prices_today):
         """
@@ -152,7 +149,7 @@ class LTSFRunner(L.LightningModule):
         self.log('test/mse', mse, on_step=False, on_epoch=True, sync_dist=True)
         self.log('test/custom_loss', custom_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('test/error_percentage', mean_error_percentage, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
-
+        
         predicted_price_tomorrow = prediction.item()
         true_price_tomorrow = label.item()
         true_price_today = true_price_today.item()
@@ -172,6 +169,8 @@ class LTSFRunner(L.LightningModule):
         self.true_prices_today.append(true_price_today)
         self.confidences.append(confidence_score)
         self.custom_losses.append(custom_loss.item())
+
+        
 
     def configure_loss(self):
         #self.loss_function = ltsf_lossfunc.MSELossWrapper(reduction='mean')

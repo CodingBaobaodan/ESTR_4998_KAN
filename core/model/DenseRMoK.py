@@ -51,37 +51,13 @@ class RevIN(nn.Module):
         if self.affine:
             x = x * self.affine_weight + self.affine_bias
         return x
-
-    # def _denormalize(self, x):
-    #     # Select the statistics for closing price which is at index 3 in the input.
-    #     # print(f"x_value 1: {x}" )
-    #     # print(f"x_shape: {x.shape}")
-    #     min_target = self.min_val[..., sum(self.indicators_list_01[:-14])+4-1]  # Keepdim so that shape broadcasting works.
-    #     max_target = self.max_val[..., sum(self.indicators_list_01[:-14])+4-1]
-    #     if self.affine:
-    #         x = (x - self.affine_bias) / (self.affine_weight + self.eps)
-
-    #     x = x * (max_target - min_target + self.eps) + min_target
-    #     if x.shape[-1] > 1:
-    #         x = x[..., sum(self.indicators_list_01[:-14])+4-1]
-
-    #     # print(f"x_value 2: {x}" )
-    #     # print(f"x_shape: {x.shape}")
-    #     return x
     
     def _denormalize(self, x):
-        # Compute the index for the closing price column.
-        # For example: if indicators_list_01 = [...], then the index is calculated as:
         col_index = sum(self.indicators_list_01[:-14]) + 4 - 1
 
-        # Print raw min and max statistics for the selected column for verification.
-        # print("Min for closing price:", self.min_val[..., col_index])
-        # print("Max for closing price:", self.max_val[..., col_index])
-        
         if self.affine:
             x = (x - self.affine_bias) / (self.affine_weight + self.eps)
 
-        # Use slicing to extract the correct closing price statistics while preserving the dimension.
         closing_min = self.min_val[..., col_index:col_index+1]
         closing_max = self.max_val[..., col_index:col_index+1]
         
@@ -91,13 +67,9 @@ class RevIN(nn.Module):
         # If the last dimension is larger than 1, slice to keep only the closing price column.
         if x.shape[-1] > 1:
             x = x[..., col_index:col_index+1]
-        
-        # Print the denormalized closing price data for verification.
-        # print("Selected closing price data:", x)
+
         return x
 
-    
-        
     def set_statistics(self, min_val, max_val):
         self.min_val = min_val
         self.max_val = max_val
@@ -119,19 +91,18 @@ class DenseRMoK(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
         self.experts = nn.ModuleList([])
+
+
         if self.KAN_experts_list_01[0]:
             self.experts.append(TaylorKANLayer(self.hist_len, self.pred_len, order=3, addbias=True))
         if self.KAN_experts_list_01[1]:
-            self.experts.append(WaveKANLayer(self.hist_len, self.pred_len, wavelet_type="mexican_hat", device="cuda"))
+            self.experts.append(WaveKANLayer(self.hist_len, self.pred_len, wavelet_type="morlet", device="cuda"))
         if self.KAN_experts_list_01[2]:
-            self.experts.append(JacobiKANLayer(self.hist_len, self.pred_len, degree=5))
+            self.experts.append(WaveKANLayer(self.hist_len, self.pred_len, wavelet_type="mexican_hat", device="cuda"))
         if self.KAN_experts_list_01[3]:
-            self.experts.append(ChebyKANLayer(self.hist_len, self.pred_len, degree=4))
+            self.experts.append(JacobiKANLayer(self.hist_len, self.pred_len, degree=5))
         if self.KAN_experts_list_01[4]:
-            self.experts.append(RBFKANLayer(self.hist_len, self.pred_len, num_centers=10))
-        if self.KAN_experts_list_01[5]:
-            self.experts.append(NaiveFourierKANLayer(self.hist_len, self.pred_len, gridsize=300))
-
+            self.experts.append(ChebyKANLayer(self.hist_len, self.pred_len, degree=4))
         '''
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
             TaylorKANLayer(hist_len, pred_len, order=3, addbias=True),
