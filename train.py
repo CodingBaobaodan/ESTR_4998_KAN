@@ -686,13 +686,13 @@ def train_init(hyper_conf, conf):
         # LearningRateMonitor(logging_interval="epoch"),
         TrainLossLoggerCallback(),
         TestLossLoggerCallback(), 
-        FinalResultLoggerCallback(filename=os.path.join(save_dir, start_end_string))
+        FinalResultLoggerCallback(filename=os.path.join(save_dir, f"{start_end_string}.csv"))
     ]
 
     trainer = L.Trainer(
         devices=conf["devices"],
         precision=conf["precision"] if "precision" in conf else "32-true",
-        logger=run_logger,
+        logger=False,
         callbacks=callbacks,
         max_epochs=conf["max_epochs"],
         gradient_clip_algorithm=conf["gradient_clip_algorithm"] if "gradient_clip_algorithm" in conf else "norm", # Not used
@@ -779,6 +779,7 @@ if __name__ == '__main__':
 
                 start_index, end_index = (0, sum(args.data_split)) if i == 0 else (start_index + args.data_split[2], end_index + args.data_split[2])
                 start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
+                print(f"start index : {start_index}, and end index:  {end_index}")
 
                 print(f"From {color.BOLD}{start_date}{color.END} To {color.BOLD}{end_date}{color.END}:")
                 read_data(start_date, end_date)
