@@ -43,7 +43,9 @@ class color:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
 
+start_end_string = ""
 def read_data(start_date, end_date):
+    global start_end_string
     start_end_string = f"{start_date}_{end_date}"
 
     ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 
@@ -603,7 +605,47 @@ class TrainLossLoggerCallback(Callback):
             # Append the average loss to the list
             self.train_losses.append(avg_loss.item())
             # Print the average loss for the epoch
-            print(f", Average Train Loss = {avg_loss.item():.4f}")
+            # print(f", Average Train Loss = {avg_loss.item():.4f}")
+
+class FinalResultLoggerCallback(Callback):
+    def __init__(self, filename="final_results.csv"):
+        super().__init__()
+        self.filename = filename
+        # Write header if the file does not exist
+        if not os.path.exists(self.filename):
+            with open(self.filename, "w") as f:
+                header = ("epoch,lr,step,test_average_daily_return,"
+                          "test_cumulative_return,test_custom_loss,"
+                          "test_error_percentage,test_loss_days,"
+                          "test_mae,test_mse,test_total_profits,train_loss\n")
+                f.write(header)
+        print("Constructor called; file should be at:", self.filename)
+
+    def on_test_end(self, trainer, pl_module):
+        # Only log from the main process
+        if trainer.global_rank != 0:
+            return
+
+        # Extract the final metrics from trainer.callback_metrics
+        metrics = trainer.callback_metrics
+        epoch = trainer.current_epoch
+        lr = metrics.get("lr-AdamW", "NA")
+        step = metrics.get("step", "NA")
+        test_avg_return = metrics.get("test/average_daily_return", "NA")
+        test_cum_return = metrics.get("test/cumulative_return", "NA")
+        test_custom_loss = metrics.get("test/custom_loss", "NA")
+        test_error_percentage = metrics.get("test/error_percentage", "NA")
+        test_loss_days = metrics.get("test/loss_days", "NA")
+        test_mae = metrics.get("test/mae", "NA")
+        test_mse = metrics.get("test/mse", "NA")
+        test_total_profits = metrics.get("test/total_profits", "NA")
+        train_loss = metrics.get("train/loss", "NA")
+
+        # Create one CSV row (comma-separated, ending with a newline)
+        line = f"{epoch},{lr},{step},{test_avg_return},{test_cum_return},{test_custom_loss}," \
+               f"{test_error_percentage},{test_loss_days},{test_mae},{test_mse},{test_total_profits},{train_loss}\n"
+        with open(self.filename, "a") as f:
+            f.write(line)
 
 class TestLossLoggerCallback(Callback):
     def __init__(self):
@@ -615,7 +657,7 @@ class TestLossLoggerCallback(Callback):
         
         if avg_loss is not None:
             self.test_losses.append(avg_loss.item())
-            print(f", Average Test Loss = {avg_loss.item():.4f}")
+            # print(f", Average Test Loss = {avg_loss.item():.4f}")
 
     def get_last_test_loss(self):
         return self.test_losses[-1]
@@ -641,9 +683,10 @@ def train_init(hyper_conf, conf):
         #     mode='min',
         #     patience=conf["es_patience"],
         # ),
-        LearningRateMonitor(logging_interval="epoch"),
+        # LearningRateMonitor(logging_interval="epoch"),
         TrainLossLoggerCallback(),
         TestLossLoggerCallback(), 
+        FinalResultLoggerCallback(filename=os.path.join(save_dir, start_end_string))
     ]
 
     trainer = L.Trainer(
@@ -663,7 +706,7 @@ def train_init(hyper_conf, conf):
     model = LTSFRunner(**conf)
 
 
-    return trainer, data_module, model, callbacks[2]
+    return trainer, data_module, model, callbacks[1]
 
 def train_func(trainer, data_module, model, callback):
     trainer.fit(model=model, datamodule=data_module)
@@ -699,7 +742,7 @@ if __name__ == '__main__':
     parser.add_argument("--val_metric", default="val/loss", type=str, help="Validation metric")
     parser.add_argument("--test_metric", default="test/mae", type=str, help="Test metric")
     parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience") # // Not used
-    parser.add_argument("--num_workers", default=10, type=int, help="Number of workers for data loading")
+    parser.add_argument("--num_workers", default=1, type=int, help="Number of workers for data loading")
 
     parser.add_argument("--population_size", default=64, type=int, help="Population Size for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
