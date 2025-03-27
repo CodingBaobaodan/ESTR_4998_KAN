@@ -762,7 +762,7 @@ if __name__ == '__main__':
     args.start_end_string = ""
 
     #ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
-    ticker_symbols = ['MSFT']
+    ticker_symbols = ['AAPL']
 
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.data_split[2])
