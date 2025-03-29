@@ -616,6 +616,7 @@ class FinalResultLoggerCallback(Callback):
         # Create one CSV row (comma-separated, ending with a newline)
         line = f"{epoch},{lr},{step},{test_avg_return},{test_cum_return},{test_custom_loss}," \
                f"{test_error_percentage},{test_loss_days},{test_mae},{test_mse},{test_total_profits},{train_loss}\n"
+        
         with open(self.filename, "a") as f:
             f.write(line)
 
@@ -643,6 +644,9 @@ def train_init(hyper_conf, conf):
 
     L.seed_everything(conf["seed"])
     save_dir = os.path.join(conf["save_root"], '{}_{}'.format(conf["model_name"], conf["dataset_name"]))
+    output_dir = save_dir
+    os.makedirs(output_dir, exist_ok=True)
+
     if "use_wandb" in conf and conf["use_wandb"]:
         run_logger = WandbLogger(save_dir=save_dir, name=conf["conf_hash"], version='seed_{}'.format(conf["seed"]))
     else:
