@@ -60,7 +60,10 @@ class GeneralTSFDataset(Dataset):
 
         true = self.norm_closing[:, :, np.newaxis][hist_start:hist_end, ...]
 
-        return var_x, marker_x, var_y, marker_y, true
+        # Use the last time index of the input window as the representative time index
+        time_index = hist_end - 1 # for trading profit calculation
+
+        return var_x, marker_x, var_y, marker_y, true, time_index
 
     def __len__(self):
         return len(self.var) - (self.hist_len + self.pred_len) + 1

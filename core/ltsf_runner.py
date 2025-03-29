@@ -95,9 +95,40 @@ class LTSFRunner(L.LightningModule):
 
             # Plot confidence vs loss
             # util.plot_confidence_vs_loss(self.confidences, self.custom_losses, self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
+
+    def on_train_epoch_end(self):
+        # Sort accumulated training predictions by their time index
+        if hasattr(self, 'train_accum'):
+            time_indices = np.array(self.train_accum['time_indices'])
+            sort_idx = np.argsort(time_indices)
+            predictions_tomorrow = np.array(self.train_accum['predictions_tomorrow'])[sort_idx]
+            true_prices_tomorrow = np.array(self.train_accum['true_prices_tomorrow'])[sort_idx]
+            true_prices_today = np.array(self.train_accum['true_prices_today'])[sort_idx]
             
+            evaluation_metrics = self.evaluate_trading_strategy(
+                predictions_tomorrow, true_prices_tomorrow, true_prices_today
+            )
+            self.log('train/average_daily_return', evaluation_metrics['average_daily_return'], on_epoch=True, sync_dist=True)
+            self.log('train/cumulative_return', evaluation_metrics['cumulative_return'], on_epoch=True, sync_dist=True)
+            self.log('train/loss_days', evaluation_metrics['loss_days'], on_epoch=True, sync_dist=True)
+            self.log('train/total_profits', evaluation_metrics['total_profits'], on_epoch=True,sync_dist=True)
+
+            # Save these metrics for later use by the FinalResultLoggerCallback.
+            self.final_train_metrics = evaluation_metrics
+            
+            # Clear the training accumulator for the next epoch
+            del self.train_accum
+
+        # log the final loss   
+        if self.train_losses:
+            self.final_train_loss = self.train_losses[-1]
+        else:
+            self.final_train_loss = "NA"
+        # Clear the training loss list for the next epoch
+        self.train_losses = []
+
     def forward(self, batch, batch_idx):
-        var_x, marker_x, var_y, marker_y, true = [_.float() for _ in batch]
+        var_x, marker_x, var_y, marker_y, true, time_index = [_.float() for _ in batch]
 
         # Extract label from var_y.
         # (Note: var_y is already constructed to carry only the closing price information.)
@@ -109,21 +140,43 @@ class LTSFRunner(L.LightningModule):
         
         true_price_today = var_x[:,-1,sum(self.indicators_bool[:-14])+4-1]
         
-        return prediction, label, true_price_today, confidence
+        return prediction, label, true_price_today, confidence, time_index
 
+    # new training step for training profit calculation
     def training_step(self, batch, batch_idx):
-        loss = self.loss_function(*self.forward(batch, batch_idx))
+        prediction, label, true_price_today, confidence, time_index = self.forward(batch, batch_idx)
+        loss = self.loss_function(prediction, label, true_price_today, confidence)
         self.log('train/loss', loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
         self.train_losses.append(loss.item())
+        
+        # Initialize the accumulator if it doesn't exist yet
+        if not hasattr(self, 'train_accum'):
+            self.train_accum = {
+                'predictions_tomorrow': [],
+                'true_prices_tomorrow': [],
+                'true_prices_today': [],
+                'time_indices': []
+            }
+        
+        # For training, the batch size is >1; accumulate each sample individually
+        batch_size = prediction.shape[0]
+        for i in range(batch_size):
+            self.train_accum['predictions_tomorrow'].append(prediction[i, 0, 0].item())
+            self.train_accum['true_prices_tomorrow'].append(label[i, 0].item())
+            self.train_accum['true_prices_today'].append(true_price_today[i].item())
+            self.train_accum['time_indices'].append(time_index[i].item())
+        
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss = self.loss_function(*self.forward(batch, batch_idx))
+        # Unpack and ignore time_index in validation if not needed
+        prediction, label, true_price_today, confidence, _ = self.forward(batch, batch_idx)
+        loss = self.loss_function(prediction, label, true_price_today, confidence)
         self.log('val/loss', loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
         return loss
 
     def test_step(self, batch, batch_idx):
-        prediction, label, true_price_today, confidence = self.forward(batch, batch_idx)
+        prediction, label, true_price_today, confidence, time_index = self.forward(batch, batch_idx)
         mae = torch.nn.functional.l1_loss(prediction, label)
         mse = torch.nn.functional.mse_loss(prediction, label)
         custom_loss = self.loss_function(prediction, label, true_price_today, confidence)

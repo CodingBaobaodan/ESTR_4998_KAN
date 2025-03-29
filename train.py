@@ -595,12 +595,13 @@ class FinalResultLoggerCallback(Callback):
         # Write header if the file does not exist
         if not os.path.exists(self.filename):
             with open(self.filename, "w") as f:
-                header = ("epoch,lr,step,test_average_daily_return,"
+                header = ("lr,step,test_average_daily_return,"
                           "test_cumulative_return,test_custom_loss,"
                           "test_error_percentage,test_loss_days,"
-                          "test_mae,test_mse,test_total_profits,train_loss\n")
+                          "test_mae,test_mse,test_total_profits,final_train_loss,"
+                          "train_average_daily_return,train_cumulative_return,"
+                          "train_loss_days,train_total_profits\n")
                 f.write(header)
-        print("Constructor called; file should be at:", self.filename)
 
     def on_test_end(self, trainer, pl_module):
         # Only log from the main process
@@ -620,11 +621,21 @@ class FinalResultLoggerCallback(Callback):
         test_mae = metrics.get("test/mae", "NA")
         test_mse = metrics.get("test/mse", "NA")
         test_total_profits = metrics.get("test/total_profits", "NA")
-        train_loss = metrics.get("train/loss", "NA")
+        
+        # Retrieve the final training loss and trading metrics from the model
+        final_train_loss = getattr(pl_module, 'final_train_loss', "NA")
+        if hasattr(pl_module, 'final_train_metrics'):
+            train_avg_return = pl_module.final_train_metrics.get('average_daily_return', "NA")
+            train_cum_return = pl_module.final_train_metrics.get('cumulative_return', "NA")
+            train_loss_days = pl_module.final_train_metrics.get('loss_days', "NA")
+            train_total_profits = pl_module.final_train_metrics.get('total_profits', "NA")
+        else:
+            train_avg_return = train_cum_return = train_loss_days = train_total_profits = "NA"
 
         # Create one CSV row (comma-separated, ending with a newline)
-        line = f"{epoch},{lr},{step},{test_avg_return},{test_cum_return},{test_custom_loss}," \
-               f"{test_error_percentage},{test_loss_days},{test_mae},{test_mse},{test_total_profits},{train_loss}\n"
+        line = f"{lr},{step},{test_avg_return},{test_cum_return},{test_custom_loss}," \
+               f"{test_error_percentage},{test_loss_days},{test_mae},{test_mse},{test_total_profits},{final_train_loss}," \
+               f"{train_avg_return},{train_cum_return},{train_loss_days},{train_total_profits}\n"
         
         with open(self.filename, "a") as f:
             f.write(line)
@@ -643,7 +654,7 @@ class TestLossLoggerCallback(Callback):
 
     def get_last_test_loss(self):
         return self.test_losses[-1]
-    
+
 def train_init(hyper_conf, conf):
     if hyper_conf is not None:
         for k, v in hyper_conf.items():
@@ -656,11 +667,12 @@ def train_init(hyper_conf, conf):
     output_dir = save_dir
     os.makedirs(output_dir, exist_ok=True)
 
-    if "use_wandb" in conf and conf["use_wandb"]:
-        run_logger = WandbLogger(save_dir=save_dir, name=conf["conf_hash"], version='seed_{}'.format(conf["seed"]))
-    else:
-        run_logger = CSVLogger(save_dir=save_dir, name=conf["conf_hash"], version='seed_{}'.format(conf["seed"]))
-    conf["exp_dir"] = os.path.join(save_dir, conf["conf_hash"], 'seed_{}'.format(conf["seed"]))
+    # No need for logger
+    # if "use_wandb" in conf and conf["use_wandb"]:
+    #     run_logger = WandbLogger(save_dir=save_dir, name=conf["conf_hash"], version='seed_{}'.format(conf["seed"]))
+    # else:
+    #     run_logger = CSVLogger(save_dir=save_dir, name=conf["conf_hash"], version='seed_{}'.format(conf["seed"]))
+    # conf["exp_dir"] = os.path.join(save_dir, conf["conf_hash"], 'seed_{}'.format(conf["seed"]))
 
     callbacks = [
         # EarlyStopping(
