@@ -427,31 +427,6 @@ def selection(population, all_fitnesses, pop_size, tournament_size=3):
 
     return selected, pop_size
 
-'''
-def intra_chromosome_crossover(ch1, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts):
-    n = min(n_features, n_hyperparameters)
-
-    features_filter = [1] * n + [0] * (n_features - n)
-    random.shuffle(features_filter)
-
-    selected_indices = [i for i, val in enumerate(features_filter) if val == 1]
-    not_selected_index = [i for i in range(n)]
-
-    # Swap the selected pairs
-    for idx in selected_indices:
-        swap_index = random.sample(not_selected_index, 1)[0]
-        not_selected_index.remove(swap_index)
-        ch1.genes['features'][idx], ch1.genes['hyperparameters'][swap_index] = ch1.genes['hyperparameters'][swap_index], ch1.genes['features'][idx]
-    
-    ch1.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
-
-    if sum(ch1.genes['hyperparameters'][max_hist_len_n_bit:])==0:
-        index_to_set = random.randint(0, n_KAN_experts - 1)
-        ch1.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
-
-    return ch1
-'''
-
 def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts):
 
     features1 = ch1.genes['features']
@@ -504,9 +479,6 @@ def genetic_algorithm(training_conf, conf):
     population = create_initial_population(conf)    
     best_performers = []
     all_populations = []
-
-    # Initialize mutation_rate and fg lists with initial values
-    #fg = [0] 
 
     # Prepare for table
     table_total_generations = PrettyTable()
@@ -744,7 +716,7 @@ if __name__ == '__main__':
     parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience") # // Not used
     parser.add_argument("--num_workers", default=1, type=int, help="Number of workers for data loading")
 
-    parser.add_argument("--population_size", default=64, type=int, help="Population Size for GA")
+    parser.add_argument("--population_size", default=4, type=int, help="Population Size for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
@@ -806,6 +778,7 @@ if __name__ == '__main__':
                     "use_wandb": args.use_wandb
                 }
 
+                args.model_name = "DenseRMoK"
                 args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
                 print("Optimal choices: ")
@@ -822,7 +795,13 @@ if __name__ == '__main__':
                 total_check += total_testing_trading_days
                 print("\n")
 
+
                 print("Baseline model is built: ")
+                args.model_name = "LSTM"
+                trainer, data_module, model, callback = train_init(training_conf, vars(args))
+                trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+
+                
                 # // Check! Baseline Model
 
             print("-----------------------------------------------------------")
