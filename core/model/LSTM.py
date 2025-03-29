@@ -93,7 +93,7 @@ class LSTM(nn.Module):
         var_x = var_x[..., 0]  # x: [B, Li, N]
         B, L, N = var_x.shape
         var_x = self.rev(var_x, 'norm') if self.rev else var_x
-        var_x = self.dropout(var_x).transpose(1, 2).reshape(B * N, L) 
+        # var_x = self.dropout(var_x).transpose(1, 2).reshape(B * N, L) 
         print(var_x.shape) 
         print(self.var_num)             
 
@@ -101,11 +101,13 @@ class LSTM(nn.Module):
         print(lstm_out1.shape)    
         lstm_out1 = self.dropout(lstm_out1)
         lstm_out2, _ = self.lstm2(lstm_out1)
+        print(lstm_out2.shape) 
 
         final_out = lstm_out2[:, -1, :]  # Shape: [B, 7] since hidden_size of second LSTM is 7
-
+        print(final_out.shape)
         prediction = self.final_layer(final_out)  # Shape: [B, 1]
         prediction = self.rev(prediction, 'denorm') 
+        print(prediction.shape)
 
         confidence = 0
 
