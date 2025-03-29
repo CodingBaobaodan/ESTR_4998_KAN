@@ -779,6 +779,7 @@ if __name__ == '__main__':
                 }
 
                 args.model_name = "DenseRMoK"
+                print(f"{color.BOLD}{args.model_name} is built: {color.END}")
                 args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
                 print("Optimal choices: ")
@@ -795,9 +796,8 @@ if __name__ == '__main__':
                 total_check += total_testing_trading_days
                 print("\n")
 
-
-                print("Baseline model is built: ")
                 args.model_name = "LSTM"
+                print(f"{color.BOLD}{args.model_name} is built: {color.END}")
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
 
