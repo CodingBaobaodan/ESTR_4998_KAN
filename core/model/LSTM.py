@@ -86,7 +86,7 @@ class LSTM(nn.Module):
         
         self.dropout = nn.Dropout(self.drop)
         self.rev = RevIN(self.indicators_list_01, self.var_num, affine=revin_affine)
-        self.final_layer = nn.Linear(in_features=self.var_num, out_features=1)
+        self.final_layer = nn.Linear(in_features=7, out_features=1)
 
 
     def forward(self, var_x, marker_x):
