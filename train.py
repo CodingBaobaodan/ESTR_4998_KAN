@@ -729,7 +729,7 @@ if __name__ == '__main__':
     parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience") # // Not used
     parser.add_argument("--num_workers", default=1, type=int, help="Number of workers for data loading")
 
-    parser.add_argument("--population_size", default=4, type=int, help="Population Size for GA")
+    parser.add_argument("--population_size", default=64, type=int, help="Population Size for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
@@ -759,8 +759,7 @@ if __name__ == '__main__':
         total_check = 0
         args.model_name = "DenseRMoK"
 
-        #for i in range(0, max_iteration):
-        for i in range(0, 1):
+        for i in range(0, max_iteration):
             if total_check>=2510:
                 print(f"End for stock {color.BOLD}{symbol}{color.END}")
                 break
@@ -816,8 +815,7 @@ if __name__ == '__main__':
         total_check = 0
         args.model_name = "LSTM"
 
-        #for i in range(0, max_iteration):
-        for i in range(0, 1):
+        for i in range(0, max_iteration):
             if total_check>=2510:
                 print(f"End for stock {color.BOLD}{symbol}{color.END}")
                 break
