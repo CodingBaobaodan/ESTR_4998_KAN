@@ -439,7 +439,7 @@ def selection(population, all_fitnesses, pop_size, tournament_size=3):
 
     return selected, pop_size
 
-def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts):
+def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts, model_name):
 
     features1 = ch1.genes['features']
     hyperparameters1 = ch1.genes['hyperparameters']
@@ -459,31 +459,33 @@ def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters, max_hist
     ch2.genes['features'] = features2
     ch2.genes['hyperparameters'] = hyperparameters2
 
-    ch1.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
-    ch2.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
+    if model_name == "DenseRMoK":
+        ch1.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
+        ch2.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
 
-    if sum(ch1.genes['hyperparameters'][max_hist_len_n_bit:])==0:
-        index_to_set = random.randint(0, n_KAN_experts - 1)
-        ch1.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
+        if sum(ch1.genes['hyperparameters'][max_hist_len_n_bit:])==0:
+            index_to_set = random.randint(0, n_KAN_experts - 1)
+            ch1.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
-    if sum(ch2.genes['hyperparameters'][max_hist_len_n_bit:])==0:
-        index_to_set = random.randint(0, n_KAN_experts - 1)
-        ch2.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
+        if sum(ch2.genes['hyperparameters'][max_hist_len_n_bit:])==0:
+            index_to_set = random.randint(0, n_KAN_experts - 1)
+            ch2.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
     return ch1, ch2
 
-def mutation(chromosome, mutation_rate, n_features, max_hist_len_n_bit, n_KAN_experts):
+def mutation(chromosome, mutation_rate, n_features, max_hist_len_n_bit, n_KAN_experts, model_name):
     # Mutate features
     chromosome.genes['features'] = [
         abs(gene - 1) if random.random() < mutation_rate else gene
         for gene in chromosome.genes['features']
     ]
 
-    chromosome.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1]
+    if model_name == "DenseRMoK":
+        chromosome.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1]
 
-    if sum(chromosome.genes['hyperparameters'][max_hist_len_n_bit:])==0:
-        index_to_set = random.randint(0, n_KAN_experts - 1)
-        chromosome.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
+        if sum(chromosome.genes['hyperparameters'][max_hist_len_n_bit:])==0:
+            index_to_set = random.randint(0, n_KAN_experts - 1)
+            chromosome.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
     return chromosome
 
@@ -529,18 +531,13 @@ def genetic_algorithm(training_conf, conf):
                 next_population.append(population[i])
                 break
             
-            '''
-            if ( generation == (conf['total_generations']//2) or ((len(fg) >= 2) and (abs(fg[-1]-fg[-2]) >= 1e-1)) ):
-                if generation != conf['total_generations'] :
-                    parent1 = intra_chromosome_crossover(parent1, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
-            '''
 
             if generation != conf['total_generations'] :
-                child1, child2 = inter_chromosome_crossover(parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'])
+                child1, child2 = inter_chromosome_crossover(parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name'])
 
             if generation != conf['total_generations'] :
-                next_population.append(mutation(child1, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
-                next_population.append(mutation(child2, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts']))
+                next_population.append(mutation(child1, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
+                next_population.append(mutation(child2, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
 
 
         # Replace the old population with the new one, preserving the best individual
