@@ -89,7 +89,7 @@ class LSTM(nn.Module):
         self.final_layer = nn.Linear(in_features=self.var_num, out_features=1)
 
 
-    def forward(self, var_x):
+    def forward(self, var_x, marker_x):
         var_x = var_x[..., 0]  # x: [B, Li, N]
         B, L, N = var_x.shape
         var_x = self.rev(var_x, 'norm') if self.rev else var_x
