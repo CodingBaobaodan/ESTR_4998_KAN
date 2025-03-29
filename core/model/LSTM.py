@@ -102,7 +102,7 @@ class LSTM(nn.Module):
         prediction = self.final_layer(final_out)  # Shape: [B, 1]
         prediction = self.rev(prediction, 'denorm') 
 
-        confidence = torch.ones(shape=(B, self.pred_len, 1))
+        confidence = torch.ones(size=(B, self.pred_len, 1))
 
         return prediction, confidence
         
