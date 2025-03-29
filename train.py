@@ -369,8 +369,14 @@ def decode(ind, conf):
     indicators_list_01 = ind.genes['features']
     var_num = sum(indicators_list_01)
     
-    hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']], ind.genes['hyperparameters'][conf['max_hist_len_n_bit']:]
-    hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
+    if conf['model_name'] == "DenseRMoK":
+        hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']], ind.genes['hyperparameters'][conf['max_hist_len_n_bit']:]
+        hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
+
+    else:
+        hist_len_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']]
+        hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
+        KAN_experts_list_01 = 0
 
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
 
@@ -381,7 +387,8 @@ def fitness_function(ind, training_conf, conf):
     print(f"window size: {conf['hist_len']}")
     print(conf['hist_len_list_01'])
 
-    print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['KAN_experts_list_01']) # KAN Experts to be changed
+    if conf['model_name'] == "DenseRMoK":
+        print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['KAN_experts_list_01']) 
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
     trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
@@ -403,13 +410,18 @@ def create_initial_population(conf):
         features[conf['total_n_features']-14:conf['total_n_features']-14+5] = [1, 1, 1, 1, 1] 
 
         hist_len_list_01 = [random.choice([0, 1]) for _ in range(conf['max_hist_len_n_bit'])] 
-        KAN_experts_list_01 = [random.choice([0, 1]) for _ in range(conf['n_KAN_experts'])] 
+        
+        if conf['model_name'] == "DenseRMoK":
+            KAN_experts_list_01 = [random.choice([0, 1]) for _ in range(conf['n_KAN_experts'])] 
 
-        if sum(KAN_experts_list_01)==0:
-            index_to_set = random.randint(0, conf['n_KAN_experts'] - 1)
-            KAN_experts_list_01 = [1 if i == index_to_set else 0 for i in range(conf['n_KAN_experts'])]
+            if sum(KAN_experts_list_01)==0:
+                index_to_set = random.randint(0, conf['n_KAN_experts'] - 1)
+                KAN_experts_list_01 = [1 if i == index_to_set else 0 for i in range(conf['n_KAN_experts'])]
 
-        hyperparameters = hist_len_list_01 + KAN_experts_list_01
+            hyperparameters = hist_len_list_01 + KAN_experts_list_01
+
+        else:
+            hyperparameters = hist_len_list_01
 
         population.append(Chromosome(features, hyperparameters))
 
@@ -745,7 +757,10 @@ if __name__ == '__main__':
 
     for symbol in ticker_symbols:
         print(f"Start for stock {color.BOLD}{symbol}{color.END}:")
+        
+
         total_check = 0
+        args.model_name = "DenseRMoK"
 
         for i in range(0, max_iteration):
             if total_check>=2510:
@@ -755,7 +770,6 @@ if __name__ == '__main__':
 
                 start_index, end_index = (0, sum(args.data_split)) if i == 0 else (start_index + args.data_split[2], end_index + args.data_split[2])
                 start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
-                print(f"start index : {start_index}, and end index:  {end_index}")
 
                 print(f"From {color.BOLD}{start_date}{color.END} To {color.BOLD}{end_date}{color.END}:")
                 read_data(start_date, end_date)
@@ -782,7 +796,7 @@ if __name__ == '__main__':
                     "use_wandb": args.use_wandb
                 }
 
-                args.model_name = "DenseRMoK"
+                
                 print(f"{color.BOLD}{args.model_name} is built: {color.END}")
                 args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
@@ -800,14 +814,61 @@ if __name__ == '__main__':
                 total_check += total_testing_trading_days
                 print("\n")
 
-                args.model_name = "LSTM"
+        
+        total_check = 0
+        args.model_name = "LSTM"
+
+        for i in range(0, max_iteration):
+            if total_check>=2510:
+                print(f"End for stock {color.BOLD}{symbol}{color.END}")
+                break
+            else:
+
+                start_index, end_index = (0, sum(args.data_split)) if i == 0 else (start_index + args.data_split[2], end_index + args.data_split[2])
+                start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
+
+                print(f"From {color.BOLD}{start_date}{color.END} To {color.BOLD}{end_date}{color.END}:")
+                read_data(start_date, end_date)
+
+                args.dataset_name = symbol
+
+                start_end_string = f"{start_date}_{end_date}"
+                args.start_end_string = start_end_string
+                df = pd.read_csv(f"{start_end_string}/dataset/{symbol}/all_data.csv")
+                args.var_num = df.shape[1] - 1 # Exclude the dates column
+
+                args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
+
+                args.hist_len = 4
+                args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
+
+                training_conf = {
+                    "seed": int(args.seed),
+                    "data_root": f"dataset/{symbol}",
+                    "save_root": args.save_root,
+                    "devices": args.devices,
+                    "use_wandb": args.use_wandb
+                }
+                
                 print(f"{color.BOLD}{args.model_name} is built: {color.END}")
+                args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, _ = genetic_algorithm(training_conf, vars(args))
+
+                print("Optimal choices: ")
+                print(args.var_num)
+                print(args.indicators_list_01)
+                print(args.hist_len)
+                print(args.hist_len_list_01)
+                
+                print("Optimal model: ")
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+                total_testing_trading_days = args.data_split[2] - args.hist_len
+                total_check += total_testing_trading_days
+                print("\n")
 
-            print("-----------------------------------------------------------")
-            print("-----------------------------------------------------------")
-            print("\n")
+        print("-----------------------------------------------------------")
+        print("-----------------------------------------------------------")
+        print("\n")
             
         
         print(f"End for stock {color.BOLD}{symbol}{color.END}")

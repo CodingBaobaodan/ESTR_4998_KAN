@@ -106,25 +106,9 @@ class LTSFRunner(L.LightningModule):
         # Now, call the model and keep all output channels (which is only 1 channel now).
         prediction, confidence = self.model(var_x, marker_x)
         prediction = prediction[:, -self.hparams.pred_len:, :]
-
-        
-        # print(f"var_x : {var_x.shape}")
-        # print(f"var_y : {var_y.shape}")
-        # print(f"true : {true.shape}")
-        # print(f"label : {label.shape}")
-
-        # true_price_today is now directly taken from the closing price, which is at index 3 in the original var_x.
-        # true_price_today = true[:, -1, 0]
-        #print(f"label : {label}")
         
         true_price_today = var_x[:,-1,sum(self.indicators_bool[:-14])+4-1]
-
-        # print(f"true_price_today : {true_price_today.shape}")
-        # print(f"true_price_today : {true_price_today}")
-
-
-        # var_x[:, -1, 3], 
-
+        
         return prediction, label, true_price_today, confidence
 
     def training_step(self, batch, batch_idx):
