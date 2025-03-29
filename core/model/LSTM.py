@@ -93,9 +93,12 @@ class LSTM(nn.Module):
         var_x = var_x[..., 0]  # x: [B, Li, N]
         B, L, N = var_x.shape
         var_x = self.rev(var_x, 'norm') if self.rev else var_x
-        var_x = self.dropout(var_x).transpose(1, 2).reshape(B * N, L)               
+        var_x = self.dropout(var_x).transpose(1, 2).reshape(B * N, L) 
+        print(var_x.shape) 
+        print(self.var_num)             
 
         lstm_out1, _ = self.lstm1(var_x)
+        print(.shape)    
         lstm_out1 = self.dropout(lstm_out1)
         lstm_out2, _ = self.lstm2(lstm_out1)
 
