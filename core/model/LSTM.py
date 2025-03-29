@@ -98,7 +98,7 @@ class LSTM(nn.Module):
         print(self.var_num)             
 
         lstm_out1, _ = self.lstm1(var_x)
-        print(.shape)    
+        print(lstm_out1.shape)    
         lstm_out1 = self.dropout(lstm_out1)
         lstm_out2, _ = self.lstm2(lstm_out1)
 
