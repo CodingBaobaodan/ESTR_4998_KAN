@@ -801,9 +801,6 @@ if __name__ == '__main__':
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
 
-                
-                # // Check! Baseline Model
-
             print("-----------------------------------------------------------")
             print("-----------------------------------------------------------")
             print("\n")
