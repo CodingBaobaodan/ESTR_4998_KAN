@@ -774,10 +774,6 @@ if __name__ == '__main__':
 
                 start_index, end_index = (0, sum(args.data_split)) if i == 0 else (start_index + args.data_split[2], end_index + args.data_split[2])
                 start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
-                print(start_date)
-                print(type(start_date))
-                print(end_date)
-                print(type(end_date))
 
                 print(f"From {color.BOLD}{start_date}{color.END} To {color.BOLD}{end_date}{color.END}:")
                 read_data(start_date, end_date)
