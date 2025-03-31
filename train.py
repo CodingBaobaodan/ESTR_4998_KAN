@@ -680,7 +680,7 @@ def train_init(hyper_conf, conf):
     callbacks = [
         TrainLossLoggerCallback(),
         TestLossLoggerCallback(), 
-        FinalResultLoggerCallback(conf['optimal'], filename=os.path.join(save_dir, f"{conf["model_name"]}.csv"))
+        FinalResultLoggerCallback(conf['optimal'], filename=os.path.join(save_dir, f"{conf['model_name']}.csv"))
     ]
 
     trainer = L.Trainer(
