@@ -541,7 +541,7 @@ def genetic_algorithm(training_conf, conf):
         all_populations.append(population[:])
 
    
-        table_total_generations.add_row([generation, ''.join(str(bit) for bit in best_individual.genes['features']), best_individual.fitness])
+        table_total_generations.add_row([generation, ''.join(str(bit) for bit in best_individual.genes['features']), ''.join(str(bit) for bit in best_individual.genes['hyperparameters']), best_individual.fitness])
             
         all_fitnesses = [ch.fitness for ch in population]
         population, pop_size = selection(population, all_fitnesses, pop_size)
