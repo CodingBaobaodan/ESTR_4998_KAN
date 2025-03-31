@@ -794,6 +794,9 @@ if __name__ == '__main__':
         for model in ["DenseRMoK", "LSTM", "MLP"]:
             args.model_name = model
             total_check = 0
+            
+            daily_return_multiplication_train = 1
+            daily_return_multiplication_test = 1
 
             #for i in range(0, max_iteration):
             for i in range(0, 1):
@@ -900,3 +903,10 @@ if __name__ == '__main__':
 
                     total_check += total_testing_trading_days
                     print("\n")
+
+            daily_return_multiplication_train = daily_return_multiplication_train - 1
+            daily_return_multiplication_test = daily_return_multiplication_test - 1
+
+            print(daily_return_multiplication_train)
+            print(daily_return_multiplication_test)
+            # write CSV

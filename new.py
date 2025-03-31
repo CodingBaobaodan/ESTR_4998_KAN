@@ -1,3 +1,14 @@
+from functools import reduce
+
+a = 2
+
+a = a * reduce(lambda x, y: x * y, [2, 3 ,4 ,5])
+a = a * reduce(lambda x, y: x * y, [2, 3 ,4 ,5])
+print(a)
+
+
+
+'''
 import argparse
 import importlib
 import importlib.util
@@ -18,6 +29,7 @@ from lightning.pytorch.callbacks import Callback
 from core.data_runner import DataInterface
 from core.ltsf_runner import LTSFRunner
 from core.util import cal_conf_hash
+from functools import reduce
 
 from fredapi import Fred
 import yfinance as yf
@@ -43,6 +55,7 @@ class color:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
 
+'''
 start_end_string = ""
 def read_data(start_date, end_date):
     global start_end_string
@@ -350,11 +363,6 @@ def read_data(start_date, end_date):
 
         combined_data.to_csv(f"{output_dir}/data_for_dates.csv", index=True)
 
-#read_data("2010-02-17", "2024-12-30")
-
-conf = {}
-conf["save_root"] = "save"
-conf["model_name"] = "DenseRMoK"
-conf["GA_type"]= 1
-save_dir = f"{conf['save_root']}/{conf['model_name']}/GA_{str(conf['GA_type'])}"
-print(save_dir)
+read_data("2010-02-17", "2024-12-30")
+'''
+'''

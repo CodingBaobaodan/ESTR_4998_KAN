@@ -11,6 +11,8 @@ import torch.optim.lr_scheduler as lrs
 import matplotlib.pyplot as plt
 from . import util
 from . import ltsf_lossfunc
+from functools import reduce
+
 
 class LTSFRunner(L.LightningModule):
     def __init__(self, **kargs):
@@ -21,6 +23,7 @@ class LTSFRunner(L.LightningModule):
 
         self.indicators_bool = kargs['indicators_list_01']
         self.dataset_name = kargs['dataset_name']
+        self.optimal = kargs['optimal']
 
         self.train_losses = []
         self.test_losses = []
@@ -81,6 +84,7 @@ class LTSFRunner(L.LightningModule):
         
         # Compile the results into a dictionary
         evaluation_metrics = {
+            'daily return': daily_returns,
             'length': len(daily_returns), 
             'average_daily_return': avg_daily_return,
             'cumulative_return': cumulative_return - 1,  # subtract 1 to get the net return
@@ -104,6 +108,12 @@ class LTSFRunner(L.LightningModule):
             self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/downside_deviation', evaluation_metrics['downside_deviation'], on_step=False, on_epoch=True, sync_dist=True)
 
+        if self.optimal:
+            global daily_return_multiplication_test
+            daily_return_multiplication_test = daily_return_multiplication_test * reduce(lambda x, y: x * (1+y), evaluation_metrics['daily return'])
+                        
+            print(daily_return_multiplication_test)
+
     def on_train_epoch_end(self):
         # Sort accumulated training predictions by their time index
         if hasattr(self, 'train_accum'):
@@ -125,7 +135,14 @@ class LTSFRunner(L.LightningModule):
 
             # Save these metrics for later use by the FinalResultLoggerCallback.
             self.final_train_metrics = evaluation_metrics
-            
+
+        if self.optimal:
+            global daily_return_multiplication_train
+            daily_return_multiplication_train = daily_return_multiplication_test * reduce(lambda x, y: x * (1+y), evaluation_metrics['daily return'])
+
+            print(daily_return_multiplication_train)
+
+
             # Clear the training accumulator for the next epoch
             del self.train_accum
 
