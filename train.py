@@ -538,7 +538,7 @@ def genetic_algorithm(training_conf, conf):
         for index, element in list(enumerate(list_ind)):
             print(element.genes['features'])
             print(element.genes['hyperparameters'])
-        table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in list(enumerate(list_ind)))
+        table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in enumerate(list_ind))
         table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['dataset_name']} with model {conf['model_name']} and GA {str(conf['GA_type'])}"
 
         print(table_each_generation)
