@@ -795,7 +795,8 @@ if __name__ == '__main__':
         for model in ["DenseRMoK", "LSTM", "MLP"]:
             args.model_name = model
             total_check = 0
-            
+            global daily_return_multiplication_train_list
+            global daily_return_multiplication_test_list
             daily_return_multiplication_train_list = []
             daily_return_multiplication_test_list = []
 
