@@ -924,4 +924,7 @@ if __name__ == '__main__':
             print(daily_return_multiplication_train, daily_return_multiplication_test)
 
 
+            #filename = f"{conf['save_root']}/{conf['model_name']}/GA{conf['GA_type']}"
+            
+        #FinalResultLoggerCallback(conf['optimal'], filename=os.path.join(save_dir, f"{conf['dataset_name']}.csv"))
             # write CSV

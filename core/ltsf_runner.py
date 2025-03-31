@@ -108,10 +108,9 @@ class LTSFRunner(L.LightningModule):
             self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/downside_deviation', evaluation_metrics['downside_deviation'], on_step=False, on_epoch=True, sync_dist=True)
 
+        global daily_return_multiplication_test_list 
         if self.optimal:
-            global daily_return_multiplication_test_list 
             daily_return_multiplication_test_list.append(evaluation_metrics['daily return'])
-
             print(daily_return_multiplication_test_list)
 
     def on_train_epoch_end(self):
@@ -136,10 +135,9 @@ class LTSFRunner(L.LightningModule):
             # Save these metrics for later use by the FinalResultLoggerCallback.
             self.final_train_metrics = evaluation_metrics
 
+        global daily_return_multiplication_train_list 
         if self.optimal:
-            global daily_return_multiplication_train_list 
             daily_return_multiplication_train_list.append(evaluation_metrics['daily return'])
-
             print(daily_return_multiplication_train_list)
 
 
