@@ -534,6 +534,7 @@ def genetic_algorithm(training_conf, conf):
         table_each_generation = PrettyTable()
         
         table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
+        print(list_ind)
         for index, element in list(enumerate(list_ind)):
             print(element.genes['features'])
             print(element.genes['hyperparameters'])
