@@ -405,7 +405,7 @@ def fitness_function(ind, training_conf, conf):
         print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['KAN_experts_list_01']) 
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
-    trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+    trainer, data_module, model, test_loss, daily_return_multiplication_train_list, daily_return_multiplication_test_list = train_func(trainer, data_module, model, callback)
 
     ind.fitness = -1 * test_loss # min MSE == max -MSE 
 
@@ -726,7 +726,7 @@ def train_init(hyper_conf, conf):
     data_module = DataInterface(**conf)
     model = LTSFRunner(**conf)
 
-    return trainer, data_module, model, callbacks[1], model.daily_return_multiplication_train_list, model.daily_return_multiplication_test_list
+    return trainer, data_module, model, callbacks[1]
 
 def train_func(trainer, data_module, model, callback_testloss):
     trainer.fit(model=model, datamodule=data_module)
@@ -873,7 +873,7 @@ if __name__ == '__main__':
                         print("Optimal model: ")
 
                         args.optimal = 1
-                        trainer, data_module, model, callback, daily_return_multiplication_train_list, daily_return_multiplication_test_list = train_init(training_conf, vars(args))
+                        trainer, data_module, model, callback = train_init(training_conf, vars(args))
                         trainer, data_module, model, test_loss, daily_return_multiplication_train_list, daily_return_multiplication_test_list = train_func(trainer, data_module, model, callback)
                         total_testing_trading_days = args.data_split[2] - args.hist_len
 
@@ -898,7 +898,7 @@ if __name__ == '__main__':
                         if args.model_name == "DenseRMoK":
                             print(args.KAN_experts_list_01)
 
-                        trainer, data_module, model, callback, daily_return_multiplication_train_list, daily_return_multiplication_test_list = train_init(training_conf, vars(args))
+                        trainer, data_module, model, callback = train_init(training_conf, vars(args))
                         trainer, data_module, model, test_loss, daily_return_multiplication_train_list, daily_return_multiplication_test_list = train_func(trainer, data_module, model, callback)
                         total_testing_trading_days = args.data_split[2] - args.hist_len
 
