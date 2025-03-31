@@ -763,7 +763,6 @@ if __name__ == '__main__':
     for symbol in ticker_symbols:
         print(f"Start for stock {color.BOLD}{symbol}{color.END}:")
         
-
         total_check = 0
         args.model_name = "DenseRMoK"
 
@@ -819,6 +818,7 @@ if __name__ == '__main__':
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
                 total_testing_trading_days = args.data_split[2] - args.hist_len
                 total_check += total_testing_trading_days
+                print(total_check)
                 print("\n")
 
         

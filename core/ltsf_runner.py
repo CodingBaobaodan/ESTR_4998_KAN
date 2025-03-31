@@ -81,7 +81,7 @@ class LTSFRunner(L.LightningModule):
         
         # Compile the results into a dictionary
         evaluation_metrics = {
-            'daily_returns_list': daily_returns, 
+            'daily_returns_list': np.array(daily_returns), 
             'average_daily_return': avg_daily_return,
             'cumulative_return': cumulative_return - 1,  # subtract 1 to get the net return
             'loss_days': loss_days,
