@@ -25,8 +25,7 @@ class LTSFRunner(L.LightningModule):
         self.train_losses = []
         self.test_losses = []
 
-
-    def evaluate_trading_strategy(self, predictions_tomorrow, true_prices_tomorrow, true_prices_today):
+    def evaluate_trading_strategy(self, predictions_tomorrow, true_prices_tomorrow, true_prices_today, risk_free_rate=4.34):
         """
         Evaluates the trading strategy based on the model's predictions.
         
@@ -40,8 +39,9 @@ class LTSFRunner(L.LightningModule):
         cumulative_return = 1.0  # Start with a base value of 1 (100% initial investment)
         total_profits = 0
         loss_days = 0
+        downside_returns = []
 
-        print(f"Number of testing trading days : {len(true_prices_today)}")
+        # print(f"Number of testing trading days : {len(true_prices_today)}")
         
         # Loop through predictions and actual prices
         for i in range(len(predictions_tomorrow)):  # Loop till second last day to avoid out of range on true_prices[i+1]
@@ -69,6 +69,13 @@ class LTSFRunner(L.LightningModule):
             cumulative_return *= (1 + daily_return)
             total_profits += profit
 
+            # Calculate downside return and track downside returns
+            downside_return = min(0, daily_return - risk_free_rate)
+            downside_returns.append(downside_return)
+
+        # Calculate downside deviation
+        downside_deviation = np.sqrt(np.mean(np.square(downside_returns)))
+
         # Calculate average daily return
         avg_daily_return = np.mean(daily_returns)
         
@@ -77,7 +84,8 @@ class LTSFRunner(L.LightningModule):
             'average_daily_return': avg_daily_return,
             'cumulative_return': cumulative_return - 1,  # subtract 1 to get the net return
             'loss_days': loss_days,
-            'total_profits': total_profits
+            'total_profits': total_profits, 
+            'downside_deviation': downside_deviation
         }
         
         return evaluation_metrics
@@ -92,9 +100,7 @@ class LTSFRunner(L.LightningModule):
             self.log('test/cumulative_return', evaluation_metrics['cumulative_return'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/loss_days', evaluation_metrics['loss_days'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
-
-            # Plot confidence vs loss
-            # util.plot_confidence_vs_loss(self.confidences, self.custom_losses, self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
+            self.log('test/downside_deviation', evaluation_metrics['downside_deviation'], on_step=False, on_epoch=True, sync_dist=True)
 
     def on_train_epoch_end(self):
         # Sort accumulated training predictions by their time index
@@ -112,6 +118,7 @@ class LTSFRunner(L.LightningModule):
             self.log('train/cumulative_return', evaluation_metrics['cumulative_return'], on_epoch=True, sync_dist=True)
             self.log('train/loss_days', evaluation_metrics['loss_days'], on_epoch=True, sync_dist=True)
             self.log('train/total_profits', evaluation_metrics['total_profits'], on_epoch=True,sync_dist=True)
+            self.log('train/downside_deviation', evaluation_metrics['downside_deviation'], on_epoch=True,sync_dist=True)
 
             # Save these metrics for later use by the FinalResultLoggerCallback.
             self.final_train_metrics = evaluation_metrics
@@ -207,10 +214,7 @@ class LTSFRunner(L.LightningModule):
         self.confidences.append(confidence_score)
         self.custom_losses.append(custom_loss.item())
 
-        
-
     def configure_loss(self):
-        #self.loss_function = ltsf_lossfunc.MSELossWrapper(reduction='mean')
         self.loss_function = ltsf_lossfunc.MSEPenaltyLoss(penalty_factor=5.0)
         
     def configure_optimizers(self):
