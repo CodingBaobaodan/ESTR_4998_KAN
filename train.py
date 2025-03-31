@@ -827,7 +827,7 @@ if __name__ == '__main__':
                     if args.model_name == "DenseRMoK":
                         args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] 
                     else:
-                        args.KAN_experts_list_01 = 0
+                        args.KAN_experts_list_01 = [0 for i in range(args.n_KAN_experts)]
 
                     training_conf = {
                         "seed": int(args.seed),
@@ -927,7 +927,12 @@ if __name__ == '__main__':
             print(daily_return_multiplication_train, daily_return_multiplication_test)
 
 
-            #filename = f"{conf['save_root']}/{conf['model_name']}/GA{conf['GA_type']}"
+            filename = f"{args.save_root}/{args.model_name}/GA{args.GA_type}/{args.dataset_name}.csv"
+            if not os.path.exists(filename):
+                with open(filename, "w") as f:
+                    header = ("train_total_return,test_total_return\n")
+                    f.write(header)
             
-        #FinalResultLoggerCallback(conf['optimal'], filename=os.path.join(save_dir, f"{conf['dataset_name']}.csv"))
-            # write CSV
+            line = f"{daily_return_multiplication_train}, {daily_return_multiplication_test}\n"
+            with open(filename, "a") as f:
+                f.write(line)
