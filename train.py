@@ -376,7 +376,17 @@ def decode(ind, conf):
     indicators_list_01 = ind.genes['features']
     var_num = sum(indicators_list_01)
     
-    if conf['GA_type']==2:
+    if conf['GA_type']==1:
+        if conf['model_name'] == "DenseRMoK":
+            hist_len_list_01, KAN_experts_list_01 = conf['hist_len_list_01'], conf['KAN_experts_list_01']
+            hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
+
+        else:
+            hist_len_list_01 = conf['hist_len_list_01']
+            hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
+            KAN_experts_list_01 = conf['KAN_experts_list_01']
+    
+    else:
         if conf['model_name'] == "DenseRMoK":
             hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']], ind.genes['hyperparameters'][conf['max_hist_len_n_bit']:]
             hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
@@ -386,10 +396,6 @@ def decode(ind, conf):
             hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
             KAN_experts_list_01 = 0
 
-    
-    else:
-        hist_len, hist_len_list_01, KAN_experts_list_01 = 0, 0, 0
-
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
 
 def fitness_function(ind, training_conf, conf):
@@ -397,12 +403,11 @@ def fitness_function(ind, training_conf, conf):
     print(f"{conf['var_num']} features are selected")
     print(conf['indicators_list_01'])
 
-    if conf['GA_type']==2:
-        print(f"window size: {conf['hist_len']}")
-        print(conf['hist_len_list_01'])
+    print(f"window size: {conf['hist_len']}")
+    print(conf['hist_len_list_01'])
 
-        if conf['model_name'] == "DenseRMoK":
-            print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['KAN_experts_list_01']) 
+    if conf['model_name'] == "DenseRMoK":
+        print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['KAN_experts_list_01']) 
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
     trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
@@ -475,7 +480,6 @@ def inter_chromosome_crossover(conf, ch1, ch2, n_features, n_hyperparameters, ma
     
     ch1.genes['features'] = features1
     ch2.genes['features'] = features2
-
 
     if conf['GA_type']==2:
         ch1.genes['hyperparameters'] = hyperparameters1
@@ -797,10 +801,6 @@ if __name__ == '__main__':
     for symbol in ticker_symbols:
         print(f"Start for stock {color.BOLD}{symbol}{color.END}:")
 
-########################################################################################################################################
-########################################################################################################################################
-########################################################################################################################################
-
         for model in ["DenseRMoK", "LSTM", "MLP"]:
             args.model_name = model
             total_check = 0
@@ -830,7 +830,10 @@ if __name__ == '__main__':
                     args.hist_len = 4
                     args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
 
-                    args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] 
+                    if args.model_name == "DenseRMoK":
+                        args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] 
+                    else:
+                        args.KAN_experts_list_01 = 0
 
                     training_conf = {
                         "seed": int(args.seed),
@@ -840,17 +843,33 @@ if __name__ == '__main__':
                         "use_wandb": args.use_wandb
                     }
 
-                    
                     print(f"{color.BOLD}{args.model_name} with GA type {args.GA_type} is built: {color.END}")
-                    if (args.GA_type==1 or args.GA_type==2):
-                        args.optimal = 0
-                        args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
-                        print("Optimal choices: ")
-                        print(args.var_num)
-                        print(args.indicators_list_01)
+                    if (args.GA_type==1 or args.GA_type==2):  
+                        if args.GA_type==1:
+                            args.optimal = 0
+                            args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
-                        if args.GA_type==2:
+                            print("Optimal choices: ")
+                            print(args.var_num)
+                            print(args.indicators_list_01)
+
+                            args.hist_len_list_01 =  [1 for i in range(args.max_hist_len_n_bit)]
+                            args.hist_len = args.min_hist_len + 4 * sum(bit << i for i, bit in enumerate(reversed(args.hist_len_list_01)))
+                            print(args.hist_len)
+                            print(args.hist_len_list_01)
+
+                            if args.model_name == "DenseRMoK":
+                                print(args.KAN_experts_list_01)
+
+                        else:
+                            args.optimal = 0
+                            args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
+
+                            print("Optimal choices: ")
+                            print(args.var_num)
+                            print(args.indicators_list_01)
+
                             print(args.hist_len)
                             print(args.hist_len_list_01)
 
