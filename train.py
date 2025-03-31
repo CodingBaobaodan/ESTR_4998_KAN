@@ -450,8 +450,8 @@ def selection(population, all_fitnesses, pop_size, tournament_size=3):
 
     selected = []
     for ind in population:
-        print(ind['features'])
-        print(ind['hyperparameters'])
+        print(ind.genes['features'])
+        print(ind.genes['hyperparameters'])
     print(all_fitnesses)
 
     for _ in range(pop_size):   
