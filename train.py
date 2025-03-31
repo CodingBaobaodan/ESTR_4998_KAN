@@ -359,16 +359,10 @@ def read_data(start_date, end_date):
 class Chromosome:
     def __init__(self, conf, features, hyperparameters):
 
-        if conf['GA_type']==1:
-            self.genes = {
-                'features': features
-            }
-
-        if conf['GA_type']==2:
-            self.genes = {
-                'features': features,
-                'hyperparameters': hyperparameters,
-            }
+        self.genes = {
+            'features': features,
+            'hyperparameters': hyperparameters,
+        }
 
         self.fitness = 0
 
@@ -445,7 +439,8 @@ def create_initial_population(conf):
                 hyperparameters = hist_len_list_01
 
         else: 
-            hyperparameters = 0
+            hist_len_list_01, KAN_experts_list_01 = conf['hist_len_list_01'], conf['KAN_experts_list_01']
+            hyperparameters = hist_len_list_01 + KAN_experts_list_01
 
         population.append(Chromosome(conf, features, hyperparameters))
 
@@ -533,15 +528,10 @@ def genetic_algorithm(training_conf, conf):
         list_ind = [fitness_function(ind, training_conf, conf) for ind in population]
 
         table_each_generation = PrettyTable()
-        if conf['GA_type']==2:
-            table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
-            table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in list(enumerate(list_ind)))
-            table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['dataset_name']} with model {conf['model_name']} and GA {str(conf['GA_type'])}"
-
-        else:
-            table_each_generation.field_names = ["Chromosome ID", "Features", "Fitness"]
-            table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), element.fitness] for index, element in list(enumerate(list_ind)))
-            table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['dataset_name']} with model {conf['model_name']} and GA {str(conf['GA_type'])}"
+        
+        table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
+        table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in list(enumerate(list_ind)))
+        table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['dataset_name']} with model {conf['model_name']} and GA {str(conf['GA_type'])}"
 
         print(table_each_generation)
 
@@ -550,11 +540,8 @@ def genetic_algorithm(training_conf, conf):
         best_performers.append((best_individual, best_individual.fitness))
         all_populations.append(population[:])
 
-        if conf['GA_type']==2:
-            table_total_generations.add_row([generation, ''.join(str(bit) for bit in best_individual.genes['features']), ''.join(str(bit) for bit in best_individual.genes['hyperparameters']), best_individual.fitness])
-
-        else:
-            table_total_generations.add_row([generation, ''.join(str(bit) for bit in best_individual.genes['features']), best_individual.fitness])
+   
+        table_total_generations.add_row([generation, ''.join(str(bit) for bit in best_individual.genes['features']), best_individual.fitness])
             
         all_fitnesses = [ch.fitness for ch in population]
         population, pop_size = selection(population, all_fitnesses, pop_size)
