@@ -583,75 +583,68 @@ class TrainLossLoggerCallback(Callback):
         # Retrieve the average training loss from callback_metrics
         avg_loss = trainer.callback_metrics.get('train/loss')
         if avg_loss is not None:
-            # Append the average loss to the list
             self.train_losses.append(avg_loss.item())
-            # Print the average loss for the epoch
-            # print(f", Average Train Loss = {avg_loss.item():.4f}")
 
 class FinalResultLoggerCallback(Callback):
-    def __init__(self, filename="final_results.csv"):
+    def __init__(self, optimal, filename="final_results.csv"):
         super().__init__()
+        self.optimal = optimal
         self.filename = filename
         # Write header if the file does not exist
-        if not os.path.exists(self.filename):
-            with open(self.filename, "w") as f:
-                '''
-                header = ("lr,step,test_average_daily_return,"
-                          "test_cumulative_return,test_custom_loss,"
-                          "test_error_percentage,test_loss_days,"
-                          "test_mae,test_mse,test_total_profits,final_train_loss,"
-                          "train_average_daily_return,train_cumulative_return,"
-                          "train_loss_days,train_total_profits\n")
-                '''
 
-                header = ("train_average_daily_return,train_cumulative_return,"
-                          "train_downside_deviation,"
-                          "train_total_profits,train_loss_days,"
-                          "final_train_loss,"
-                          "test_average_daily_return,test_cumulative_return,"
-                          "test_downside_deviation,"
-                          "test_total_profits,test_loss_days,"
-                          "test_custom_loss,test_error_percentage,test_mae,test_mse\n")
+        if self.optimal:
+            if not os.path.exists(self.filename):
+                with open(self.filename, "w") as f:
+                    header = ("train_average_daily_return,train_cumulative_return,"
+                            "train_downside_deviation,"
+                            "train_total_profits,train_loss_days,"
+                            "final_train_loss,"
+                            "test_average_daily_return,test_cumulative_return,"
+                            "test_downside_deviation,"
+                            "test_total_profits,test_loss_days,"
+                            "test_custom_loss,test_error_percentage,test_mae,test_mse\n")
 
-                f.write(header)
+                    f.write(header)
 
     def on_test_end(self, trainer, pl_module):
-        # Only log from the main process
-        if trainer.global_rank != 0:
-            return
-        
-        # Retrieve the final training loss and trading metrics from the model
-        final_train_loss = getattr(pl_module, 'final_train_loss', "NA")
-        if hasattr(pl_module, 'final_train_metrics'):
-            train_avg_return = pl_module.final_train_metrics.get('average_daily_return', "NA")
-            train_cum_return = pl_module.final_train_metrics.get('cumulative_return', "NA")
-            train_loss_days = pl_module.final_train_metrics.get('loss_days', "NA")
-            train_total_profits = pl_module.final_train_metrics.get('total_profits', "NA")
-            train_downside_deviation = pl_module.final_train_metrics.get('downside_deviation', "NA")
-        else:
-            train_avg_return = train_cum_return = train_loss_days = train_total_profits = train_downside_deviation = "NA"
 
-        # Extract the final metrics from trainer.callback_metrics
-        metrics = trainer.callback_metrics
-        test_avg_return = metrics.get("test/average_daily_return", "NA")
-        test_cum_return = metrics.get("test/cumulative_return", "NA")
-        test_custom_loss = metrics.get("test/custom_loss", "NA")
-        test_error_percentage = metrics.get("test/error_percentage", "NA")
-        test_loss_days = metrics.get("test/loss_days", "NA")
-        test_mae = metrics.get("test/mae", "NA")
-        test_mse = metrics.get("test/mse", "NA")
-        test_total_profits = metrics.get("test/total_profits", "NA")
-        test_downside_deviation = metrics.get("test/downside_deviation", "NA")
+        if self.optimal:
+            # Only log from the main process
+            if trainer.global_rank != 0:
+                return
+            
+            # Retrieve the final training loss and trading metrics from the model
+            final_train_loss = getattr(pl_module, 'final_train_loss', "NA")
+            if hasattr(pl_module, 'final_train_metrics'):
+                train_avg_return = pl_module.final_train_metrics.get('average_daily_return', "NA")
+                train_cum_return = pl_module.final_train_metrics.get('cumulative_return', "NA")
+                train_loss_days = pl_module.final_train_metrics.get('loss_days', "NA")
+                train_total_profits = pl_module.final_train_metrics.get('total_profits', "NA")
+                train_downside_deviation = pl_module.final_train_metrics.get('downside_deviation', "NA")
+            else:
+                train_avg_return = train_cum_return = train_loss_days = train_total_profits = train_downside_deviation = "NA"
+
+            # Extract the final metrics from trainer.callback_metrics
+            metrics = trainer.callback_metrics
+            test_avg_return = metrics.get("test/average_daily_return", "NA")
+            test_cum_return = metrics.get("test/cumulative_return", "NA")
+            test_custom_loss = metrics.get("test/custom_loss", "NA")
+            test_error_percentage = metrics.get("test/error_percentage", "NA")
+            test_loss_days = metrics.get("test/loss_days", "NA")
+            test_mae = metrics.get("test/mae", "NA")
+            test_mse = metrics.get("test/mse", "NA")
+            test_total_profits = metrics.get("test/total_profits", "NA")
+            test_downside_deviation = metrics.get("test/downside_deviation", "NA")
 
 
-        line = f"{train_avg_return}, {train_cum_return}," \
-               f"{train_downside_deviation}, {train_total_profits}, {train_loss_days}," \
-               f"{final_train_loss}, {test_avg_return}, {test_cum_return}," \
-               f"{test_downside_deviation}, {test_total_profits}, {test_loss_days}, {test_custom_loss}," \
-               f"{test_error_percentage}, {test_mae}, {test_mse}\n"
-                       
-        with open(self.filename, "a") as f:
-            f.write(line)
+            line = f"{train_avg_return}, {train_cum_return}," \
+                f"{train_downside_deviation}, {train_total_profits}, {train_loss_days}," \
+                f"{final_train_loss}, {test_avg_return}, {test_cum_return}," \
+                f"{test_downside_deviation}, {test_total_profits}, {test_loss_days}, {test_custom_loss}," \
+                f"{test_error_percentage}, {test_mae}, {test_mse}\n"
+                        
+            with open(self.filename, "a") as f:
+                f.write(line)
 
 class TestLossLoggerCallback(Callback):
     def __init__(self):
@@ -673,7 +666,6 @@ def train_init(hyper_conf, conf):
             conf[k] = v
     conf['conf_hash'] = cal_conf_hash(conf, hash_len=10)
 
-
     L.seed_everything(conf["seed"])
     save_dir = os.path.join(conf["save_root"], '{}_{}'.format(conf["model_name"], conf["dataset_name"]))
     output_dir = save_dir
@@ -682,7 +674,7 @@ def train_init(hyper_conf, conf):
     callbacks = [
         TrainLossLoggerCallback(),
         TestLossLoggerCallback(), 
-        FinalResultLoggerCallback(filename=os.path.join(save_dir, f"{start_end_string}.csv"))
+        FinalResultLoggerCallback(conf['optimal'], filename=os.path.join(save_dir, f"{start_end_string}.csv"))
     ]
 
     trainer = L.Trainer(
@@ -700,7 +692,6 @@ def train_init(hyper_conf, conf):
 
     data_module = DataInterface(**conf)
     model = LTSFRunner(**conf)
-
 
     return trainer, data_module, model, callbacks[1]
 
@@ -723,6 +714,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_wandb", default=0, type=int, help="use wandb")
     parser.add_argument("--seed", type=int, default=1, help="seed")
     parser.add_argument("--model_name", default="DenseRMoK", type=str, help="Model name")
+    parser.add_argument("--optimal", default="0", type=int, help="Whether this model is optimal")
     parser.add_argument("--revin_affine", default=False, type=bool, help="Use revin affine") 
 
     parser.add_argument("--lr", default=0.001, type=float, help="Learning rate")
@@ -740,7 +732,7 @@ if __name__ == '__main__':
     parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience") # // Not used
     parser.add_argument("--num_workers", default=1, type=int, help="Number of workers for data loading")
 
-    parser.add_argument("--population_size", default=64, type=int, help="Population Size for GA")
+    parser.add_argument("--population_size", default=4, type=int, help="Population Size for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
@@ -806,6 +798,7 @@ if __name__ == '__main__':
 
                 
                 print(f"{color.BOLD}{args.model_name} is built: {color.END}")
+                args.optimal = 0
                 args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
                 print("Optimal choices: ")
@@ -816,6 +809,7 @@ if __name__ == '__main__':
                 print(args.KAN_experts_list_01)
                 
                 print("Optimal model: ")
+                args.optimal = 1
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
                 total_testing_trading_days = args.data_split[2] - args.hist_len
@@ -859,6 +853,7 @@ if __name__ == '__main__':
                 }
                 
                 print(f"{color.BOLD}{args.model_name} is built: {color.END}")
+                args.optimal = 0
                 args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, _ = genetic_algorithm(training_conf, vars(args))
 
                 print("Optimal choices: ")
@@ -868,6 +863,7 @@ if __name__ == '__main__':
                 print(args.hist_len_list_01)
                 
                 print("Optimal model: ")
+                args.optimal = 1
                 trainer, data_module, model, callback = train_init(training_conf, vars(args))
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
                 total_testing_trading_days = args.data_split[2] - args.hist_len
