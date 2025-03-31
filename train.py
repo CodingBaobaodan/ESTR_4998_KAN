@@ -618,7 +618,7 @@ class FinalResultLoggerCallback(Callback):
             # Retrieve the final training loss and trading metrics from the model
             final_train_loss = getattr(pl_module, 'final_train_loss', "NA")
             if hasattr(pl_module, 'final_train_metrics'):
-                train_daily_returns_list = pl_module.final_train_metrics.get('daily_returns_list', "NA")
+                train_length = pl_module.final_train_metrics.get('length', "NA")
                 train_avg_return = pl_module.final_train_metrics.get('average_daily_return', "NA")
                 train_cum_return = pl_module.final_train_metrics.get('cumulative_return', "NA")
                 train_loss_days = pl_module.final_train_metrics.get('loss_days', "NA")
@@ -630,7 +630,7 @@ class FinalResultLoggerCallback(Callback):
             # Extract the final metrics from trainer.callback_metrics
 
             metrics = trainer.callback_metrics
-            test_daily_returns_list = metrics.get("test/daily_returns_list", "NA")
+            test_length = metrics.get("test/length", "NA")
             test_avg_return = metrics.get("test/average_daily_return", "NA")
             test_cum_return = metrics.get("test/cumulative_return", "NA")
             test_custom_loss = metrics.get("test/custom_loss", "NA")
@@ -642,9 +642,9 @@ class FinalResultLoggerCallback(Callback):
             test_downside_deviation = metrics.get("test/downside_deviation", "NA")
 
 
-            line = f"{train_daily_returns_list}, {train_avg_return}, {train_cum_return}," \
+            line = f"{train_length}, {train_avg_return}, {train_cum_return}," \
                 f"{train_downside_deviation}, {train_total_profits}, {train_loss_days}," \
-                f"{final_train_loss}, {test_daily_returns_list}, {test_avg_return}, {test_cum_return}," \
+                f"{final_train_loss}, {test_length}, {test_avg_return}, {test_cum_return}," \
                 f"{test_downside_deviation}, {test_total_profits}, {test_loss_days}, {test_custom_loss}," \
                 f"{test_error_percentage}, {test_mae}, {test_mse}\n"
                         

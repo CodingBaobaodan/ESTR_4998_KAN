@@ -81,7 +81,7 @@ class LTSFRunner(L.LightningModule):
         
         # Compile the results into a dictionary
         evaluation_metrics = {
-            'daily_returns_list': np.array(daily_returns), 
+            'length': len(daily_returns), 
             'average_daily_return': avg_daily_return,
             'cumulative_return': cumulative_return - 1,  # subtract 1 to get the net return
             'loss_days': loss_days,
@@ -97,7 +97,7 @@ class LTSFRunner(L.LightningModule):
             evaluation_metrics = self.evaluate_trading_strategy(self.predictions_tomorrow, self.true_prices_tomorrow, self.true_prices_today)
             
             # Log the trading strategy evaluation metrics
-            self.log('test/daily_returns_list', evaluation_metrics['daily_returns_list'], on_step=False, on_epoch=True, sync_dist=True)
+            self.log('test/length', evaluation_metrics['length'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/average_daily_return', evaluation_metrics['average_daily_return'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/cumulative_return', evaluation_metrics['cumulative_return'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/loss_days', evaluation_metrics['loss_days'], on_step=False, on_epoch=True, sync_dist=True)
@@ -116,7 +116,7 @@ class LTSFRunner(L.LightningModule):
             evaluation_metrics = self.evaluate_trading_strategy(
                 predictions_tomorrow, true_prices_tomorrow, true_prices_today
             )
-            self.log('train/daily_returns_list', evaluation_metrics['daily_returns_list'], on_epoch=True, sync_dist=True)
+            self.log('train/length', evaluation_metrics['length'], on_epoch=True, sync_dist=True)
             self.log('train/average_daily_return', evaluation_metrics['average_daily_return'], on_epoch=True, sync_dist=True)
             self.log('train/cumulative_return', evaluation_metrics['cumulative_return'], on_epoch=True, sync_dist=True)
             self.log('train/loss_days', evaluation_metrics['loss_days'], on_epoch=True, sync_dist=True)
