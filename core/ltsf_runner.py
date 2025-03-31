@@ -138,7 +138,7 @@ class LTSFRunner(L.LightningModule):
 
         if self.optimal:
             global daily_return_multiplication_train
-            daily_return_multiplication_train = daily_return_multiplication_test * reduce(lambda x, y: x * (1+y), evaluation_metrics['daily return'])
+            daily_return_multiplication_train = daily_return_multiplication_train * reduce(lambda x, y: x * (1+y), evaluation_metrics['daily return'])
 
             print(daily_return_multiplication_train)
 
