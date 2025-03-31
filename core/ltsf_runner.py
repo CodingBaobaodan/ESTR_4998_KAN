@@ -138,7 +138,7 @@ class LTSFRunner(L.LightningModule):
             self.final_train_metrics = evaluation_metrics
 
         if self.optimal:
-            self.daily_return_multiplication_train_list = evaluation_metrics['daily return']]
+            self.daily_return_multiplication_train_list = evaluation_metrics['daily return']
 
 
         # Clear the training accumulator for the next epoch
