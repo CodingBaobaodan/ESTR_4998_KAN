@@ -595,10 +595,12 @@ class FinalResultLoggerCallback(Callback):
         if self.optimal:
             if not os.path.exists(self.filename):
                 with open(self.filename, "w") as f:
-                    header = ("train_average_daily_return,train_cumulative_return,"
+                    header = ("train_daily_returns_list,"
+                            "train_average_daily_return,train_cumulative_return,"
                             "train_downside_deviation,"
                             "train_total_profits,train_loss_days,"
                             "final_train_loss,"
+                            "test_daily_returns_list,"
                             "test_average_daily_return,test_cumulative_return,"
                             "test_downside_deviation,"
                             "test_total_profits,test_loss_days,"
@@ -616,6 +618,7 @@ class FinalResultLoggerCallback(Callback):
             # Retrieve the final training loss and trading metrics from the model
             final_train_loss = getattr(pl_module, 'final_train_loss', "NA")
             if hasattr(pl_module, 'final_train_metrics'):
+                train_daily_returns_list = pl_module.final_train_metrics.get('daily_returns_list', "NA")
                 train_avg_return = pl_module.final_train_metrics.get('average_daily_return', "NA")
                 train_cum_return = pl_module.final_train_metrics.get('cumulative_return', "NA")
                 train_loss_days = pl_module.final_train_metrics.get('loss_days', "NA")
@@ -625,7 +628,9 @@ class FinalResultLoggerCallback(Callback):
                 train_avg_return = train_cum_return = train_loss_days = train_total_profits = train_downside_deviation = "NA"
 
             # Extract the final metrics from trainer.callback_metrics
+
             metrics = trainer.callback_metrics
+            test_daily_returns_list = metrics.get("test/daily_returns_list", "NA")
             test_avg_return = metrics.get("test/average_daily_return", "NA")
             test_cum_return = metrics.get("test/cumulative_return", "NA")
             test_custom_loss = metrics.get("test/custom_loss", "NA")
@@ -637,9 +642,9 @@ class FinalResultLoggerCallback(Callback):
             test_downside_deviation = metrics.get("test/downside_deviation", "NA")
 
 
-            line = f"{train_avg_return}, {train_cum_return}," \
+            line = f"{train_daily_returns_list}, {train_avg_return}, {train_cum_return}," \
                 f"{train_downside_deviation}, {train_total_profits}, {train_loss_days}," \
-                f"{final_train_loss}, {test_avg_return}, {test_cum_return}," \
+                f"{final_train_loss}, {test_daily_returns_list}, {test_avg_return}, {test_cum_return}," \
                 f"{test_downside_deviation}, {test_total_profits}, {test_loss_days}, {test_custom_loss}," \
                 f"{test_error_percentage}, {test_mae}, {test_mse}\n"
                         
@@ -695,14 +700,14 @@ def train_init(hyper_conf, conf):
 
     return trainer, data_module, model, callbacks[1]
 
-def train_func(trainer, data_module, model, callback):
+def train_func(trainer, data_module, model, callback_testloss):
     trainer.fit(model=model, datamodule=data_module)
     trainer.test(model=model, datamodule=data_module)
 
     model.train_plot_losses()
     model.test_plot_losses()
 
-    return trainer, data_module, model, callback.get_last_test_loss()
+    return trainer, data_module, model, callback_testloss.get_last_test_loss()
 
 
 if __name__ == '__main__':
