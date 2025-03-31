@@ -440,7 +440,10 @@ def create_initial_population(conf):
 
         else: 
             hist_len_list_01, KAN_experts_list_01 = conf['hist_len_list_01'], conf['KAN_experts_list_01']
-            hyperparameters = hist_len_list_01 + KAN_experts_list_01
+            if conf['model_name'] == "DenseRMoK":
+                hyperparameters = hist_len_list_01 + KAN_experts_list_01
+            else:
+                hyperparameters = hist_len_list_01
 
         population.append(Chromosome(conf, features, hyperparameters))
 
