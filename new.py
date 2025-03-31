@@ -350,4 +350,11 @@ def read_data(start_date, end_date):
 
         combined_data.to_csv(f"{output_dir}/data_for_dates.csv", index=True)
 
-read_data("2010-02-17", "2024-12-30")
+#read_data("2010-02-17", "2024-12-30")
+
+conf = {}
+conf["save_root"] = "save"
+conf["model_name"] = "DenseRMoK"
+conf["GA_type"]= 1
+save_dir = f"{conf['save_root']}/{conf['model_name']}/GA_{str(conf['GA_type'])}"
+print(save_dir)

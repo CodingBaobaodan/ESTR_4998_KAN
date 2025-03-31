@@ -357,11 +357,18 @@ def read_data(start_date, end_date):
         combined_data.to_csv(f"{output_dir}/all_data.csv", index=True)
 
 class Chromosome:
-    def __init__(self, features, hyperparameters):
-        self.genes = {
-            'features': features,
-            'hyperparameters': hyperparameters,
-        }
+    def __init__(self, conf, features, hyperparameters):
+
+        if conf['GA_type']==1:
+            self.genes = {
+                'features': features
+            }
+
+        if conf['GA_type']==2:
+            self.genes = {
+                'features': features,
+                'hyperparameters': hyperparameters,
+            }
 
         self.fitness = 0
 
@@ -369,14 +376,19 @@ def decode(ind, conf):
     indicators_list_01 = ind.genes['features']
     var_num = sum(indicators_list_01)
     
-    if conf['model_name'] == "DenseRMoK":
-        hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']], ind.genes['hyperparameters'][conf['max_hist_len_n_bit']:]
-        hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
+    if conf['GA_type']==2:
+        if conf['model_name'] == "DenseRMoK":
+            hist_len_list_01, KAN_experts_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']], ind.genes['hyperparameters'][conf['max_hist_len_n_bit']:]
+            hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
 
+        else:
+            hist_len_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']]
+            hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
+            KAN_experts_list_01 = 0
+
+    
     else:
-        hist_len_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']]
-        hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
-        KAN_experts_list_01 = 0
+        hist_len, hist_len_list_01, KAN_experts_list_01 = 0, 0, 0
 
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
 
@@ -384,11 +396,13 @@ def fitness_function(ind, training_conf, conf):
     conf['var_num'], conf['indicators_list_01'], conf['hist_len'], conf['hist_len_list_01'], conf['KAN_experts_list_01'] = decode(ind, conf)
     print(f"{conf['var_num']} features are selected")
     print(conf['indicators_list_01'])
-    print(f"window size: {conf['hist_len']}")
-    print(conf['hist_len_list_01'])
 
-    if conf['model_name'] == "DenseRMoK":
-        print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['KAN_experts_list_01']) 
+    if conf['GA_type']==2:
+        print(f"window size: {conf['hist_len']}")
+        print(conf['hist_len_list_01'])
+
+        if conf['model_name'] == "DenseRMoK":
+            print("Experts Taylor, Wavelet (Morlet), Wavelet (Mexican Hat), Jacobi, Cheby", conf['KAN_experts_list_01']) 
 
     trainer, data_module, model, callback = train_init(training_conf, conf)
     trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
@@ -409,21 +423,26 @@ def create_initial_population(conf):
         features = [random.choice([0, 1]) for _ in range(conf['total_n_features'])]
         features[conf['total_n_features']-14:conf['total_n_features']-14+5] = [1, 1, 1, 1, 1] 
 
-        hist_len_list_01 = [random.choice([0, 1]) for _ in range(conf['max_hist_len_n_bit'])] 
+        if conf['GA_type']==2:
+
+            hist_len_list_01 = [random.choice([0, 1]) for _ in range(conf['max_hist_len_n_bit'])] 
         
-        if conf['model_name'] == "DenseRMoK":
-            KAN_experts_list_01 = [random.choice([0, 1]) for _ in range(conf['n_KAN_experts'])] 
+            if conf['model_name'] == "DenseRMoK":
+                KAN_experts_list_01 = [random.choice([0, 1]) for _ in range(conf['n_KAN_experts'])] 
 
-            if sum(KAN_experts_list_01)==0:
-                index_to_set = random.randint(0, conf['n_KAN_experts'] - 1)
-                KAN_experts_list_01 = [1 if i == index_to_set else 0 for i in range(conf['n_KAN_experts'])]
+                if sum(KAN_experts_list_01)==0:
+                    index_to_set = random.randint(0, conf['n_KAN_experts'] - 1)
+                    KAN_experts_list_01 = [1 if i == index_to_set else 0 for i in range(conf['n_KAN_experts'])]
 
-            hyperparameters = hist_len_list_01 + KAN_experts_list_01
+                hyperparameters = hist_len_list_01 + KAN_experts_list_01
 
-        else:
-            hyperparameters = hist_len_list_01
+            else:
+                hyperparameters = hist_len_list_01
 
-        population.append(Chromosome(features, hyperparameters))
+        else: 
+            hyperparameters = 0
+
+        population.append(Chromosome(conf, features, hyperparameters))
 
     return population
 
@@ -439,7 +458,7 @@ def selection(population, all_fitnesses, pop_size, tournament_size=3):
 
     return selected, pop_size
 
-def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts, model_name):
+def inter_chromosome_crossover(conf, ch1, ch2, n_features, n_hyperparameters, max_hist_len_n_bit, n_KAN_experts, model_name):
 
     features1 = ch1.genes['features']
     hyperparameters1 = ch1.genes['hyperparameters']
@@ -451,41 +470,45 @@ def inter_chromosome_crossover(ch1, ch2, n_features, n_hyperparameters, max_hist
     crossover_point2 = random.randint(0, n_hyperparameters - 1)
     
     features1[crossover_point1:], features2[crossover_point1:] = features2[crossover_point1:], features1[crossover_point1:]
-    hyperparameters1[crossover_point2:], hyperparameters2[crossover_point2:] = hyperparameters2[crossover_point2:], hyperparameters1[crossover_point2:]
+    if conf['GA_type']==2:
+        hyperparameters1[crossover_point2:], hyperparameters2[crossover_point2:] = hyperparameters2[crossover_point2:], hyperparameters1[crossover_point2:]
     
     ch1.genes['features'] = features1
-    ch1.genes['hyperparameters'] = hyperparameters1
-    
     ch2.genes['features'] = features2
-    ch2.genes['hyperparameters'] = hyperparameters2
 
-    if model_name == "DenseRMoK":
-        ch1.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
-        ch2.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
 
-        if sum(ch1.genes['hyperparameters'][max_hist_len_n_bit:])==0:
-            index_to_set = random.randint(0, n_KAN_experts - 1)
-            ch1.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
+    if conf['GA_type']==2:
+        ch1.genes['hyperparameters'] = hyperparameters1
+        ch2.genes['hyperparameters'] = hyperparameters2
 
-        if sum(ch2.genes['hyperparameters'][max_hist_len_n_bit:])==0:
-            index_to_set = random.randint(0, n_KAN_experts - 1)
-            ch2.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
+        if model_name == "DenseRMoK":
+            ch1.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
+            ch2.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
+
+            if sum(ch1.genes['hyperparameters'][max_hist_len_n_bit:])==0:
+                index_to_set = random.randint(0, n_KAN_experts - 1)
+                ch1.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
+
+            if sum(ch2.genes['hyperparameters'][max_hist_len_n_bit:])==0:
+                index_to_set = random.randint(0, n_KAN_experts - 1)
+                ch2.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
     return ch1, ch2
 
-def mutation(chromosome, mutation_rate, n_features, max_hist_len_n_bit, n_KAN_experts, model_name):
+def mutation(conf, chromosome, mutation_rate, n_features, max_hist_len_n_bit, n_KAN_experts, model_name):
     # Mutate features
     chromosome.genes['features'] = [
         abs(gene - 1) if random.random() < mutation_rate else gene
         for gene in chromosome.genes['features']
     ]
 
-    if model_name == "DenseRMoK":
-        chromosome.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1]
+    if conf['GA_type']==2:
+        if model_name == "DenseRMoK":
+            chromosome.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1]
 
-        if sum(chromosome.genes['hyperparameters'][max_hist_len_n_bit:])==0:
-            index_to_set = random.randint(0, n_KAN_experts - 1)
-            chromosome.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
+            if sum(chromosome.genes['hyperparameters'][max_hist_len_n_bit:])==0:
+                index_to_set = random.randint(0, n_KAN_experts - 1)
+                chromosome.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
     return chromosome
 
@@ -497,7 +520,7 @@ def genetic_algorithm(training_conf, conf):
     # Prepare for table
     table_total_generations = PrettyTable()
     table_total_generations.field_names = ["Generation", "Features", "Hyperparameters", "Fitness"]
-    table_total_generations.title = f"{conf['start_end_string']} for stock {conf['dataset_name']}"
+    table_total_generations.title = f"{conf['start_end_string']} for stock {conf['dataset_name']} with model {conf['model_name']} and GA {str(conf['GA_type'])}"
 
     pop_size = conf['population_size']
 
@@ -506,9 +529,16 @@ def genetic_algorithm(training_conf, conf):
         list_ind = [fitness_function(ind, training_conf, conf) for ind in population]
 
         table_each_generation = PrettyTable()
-        table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
-        table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in list(enumerate(list_ind)))
-        table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['dataset_name']} "
+        if conf['GA_type']==2:
+            table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
+            table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in list(enumerate(list_ind)))
+            table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['dataset_name']} with model {conf['model_name']} and GA {str(conf['GA_type'])}"
+
+        else:
+            table_each_generation.field_names = ["Chromosome ID", "Features", "Fitness"]
+            table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), element.fitness] for index, element in list(enumerate(list_ind)))
+            table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['dataset_name']} with model {conf['model_name']} and GA {str(conf['GA_type'])}"
+
         print(table_each_generation)
 
         # Store the best performer of the current generation
@@ -516,8 +546,12 @@ def genetic_algorithm(training_conf, conf):
         best_performers.append((best_individual, best_individual.fitness))
         all_populations.append(population[:])
 
-        table_total_generations.add_row([generation, ''.join(str(bit) for bit in best_individual.genes['features']), ''.join(str(bit) for bit in best_individual.genes['hyperparameters']), best_individual.fitness])
+        if conf['GA_type']==2:
+            table_total_generations.add_row([generation, ''.join(str(bit) for bit in best_individual.genes['features']), ''.join(str(bit) for bit in best_individual.genes['hyperparameters']), best_individual.fitness])
 
+        else:
+            table_total_generations.add_row([generation, ''.join(str(bit) for bit in best_individual.genes['features']), best_individual.fitness])
+            
         all_fitnesses = [ch.fitness for ch in population]
         population, pop_size = selection(population, all_fitnesses, pop_size)
 
@@ -533,17 +567,17 @@ def genetic_algorithm(training_conf, conf):
             
 
             if generation != conf['total_generations'] :
-                child1, child2 = inter_chromosome_crossover(parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name'])
+                child1, child2 = inter_chromosome_crossover(conf, parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name'])
 
             if generation != conf['total_generations'] :
-                next_population.append(mutation(child1, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
-                next_population.append(mutation(child2, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
+                next_population.append(mutation(conf, child1, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
+                next_population.append(mutation(conf, child2, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
 
 
         # Replace the old population with the new one, preserving the best individual
         next_population[0] = best_individual
         population = next_population
-        # fg.append(best_individual.fitness)
+
 
     print(table_total_generations)
 
@@ -561,14 +595,13 @@ def genetic_algorithm(training_conf, conf):
     plt.ylabel('Fitness')
     plt.title(f'Fitness Over Generations for {conf["dataset_name"]}')
     plt.legend()
-    plt.savefig(f"{conf['start_end_string']}/plots/GA_{conf['dataset_name']}.png")
+    plt.savefig(f"{conf['start_end_string']}/plots/GA_{str(conf['GA_type'])}_{conf['dataset_name']}.png")
     plt.close()
 
     best_ch = max(population, key=lambda ch: ch.fitness) 
     var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01 = decode(best_ch, conf)
 
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
-
 
 class TrainLossLoggerCallback(Callback):
     def __init__(self):
@@ -672,7 +705,7 @@ def train_init(hyper_conf, conf):
     conf['conf_hash'] = cal_conf_hash(conf, hash_len=10)
 
     L.seed_everything(conf["seed"])
-    save_dir = os.path.join(conf["save_root"], conf["model_name"])
+    save_dir = f"{conf["save_root"]}/{conf["model_name"]}/GA{conf["GA_type"]}"
     output_dir = save_dir
     os.makedirs(output_dir, exist_ok=True)
 
@@ -720,6 +753,7 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=1, help="seed")
     parser.add_argument("--model_name", default="DenseRMoK", type=str, help="Model name")
     parser.add_argument("--optimal", default="0", type=int, help="Whether this model is optimal")
+    parser.add_argument("--GA_type", default="2", type=int, help="0: no GA // 1: 2017 GA // 2: our GA")
     parser.add_argument("--revin_affine", default=False, type=bool, help="Use revin affine") 
 
     parser.add_argument("--lr", default=0.001, type=float, help="Learning rate")
@@ -770,7 +804,7 @@ if __name__ == '__main__':
         total_check = 0
         args.model_name = "DenseRMoK"
 
-        for i in range(0, 2):
+        for i in range(0, 1):
         #for i in range(0, max_iteration):
             if total_check>=2520:
                 print(f"End for stock {color.BOLD}{symbol}{color.END}")
@@ -806,22 +840,48 @@ if __name__ == '__main__':
                 }
 
                 
-                print(f"{color.BOLD}{args.model_name} is built: {color.END}")
-                args.optimal = 0
-                args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
+                print(f"{color.BOLD}{args.model_name} with GA type {args.GA_type} is built: {color.END}")
+                if (args.GA_type==1 or args.GA_type==2):
+                    args.optimal = 0
+                    args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, args.KAN_experts_list_01 = genetic_algorithm(training_conf, vars(args))
 
-                print("Optimal choices: ")
-                print(args.var_num)
-                print(args.indicators_list_01)
-                print(args.hist_len)
-                print(args.hist_len_list_01)
-                print(args.KAN_experts_list_01)
+                    print("Optimal choices: ")
+                    print(args.var_num)
+                    print(args.indicators_list_01)
+
+                    if args.GA_type==2:
+                        print(args.hist_len)
+                        print(args.hist_len_list_01)
+                        print(args.KAN_experts_list_01)
                 
-                print("Optimal model: ")
-                args.optimal = 1
-                trainer, data_module, model, callback = train_init(training_conf, vars(args))
-                trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
-                total_testing_trading_days = args.data_split[2] - args.hist_len
+                    print("Optimal model: ")
+
+                    args.optimal = 1
+                    trainer, data_module, model, callback = train_init(training_conf, vars(args))
+                    trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+                    total_testing_trading_days = args.data_split[2] - args.hist_len
+
+                else:
+                    args.optimal = 1
+                    
+                    args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
+                    args.var_num = sum(args.indicators_list_01)
+                    args.hist_len_list_01 =  [1 for i in range(args.max_hist_len_n_bit)]
+                    args.hist_len = args.min_hist_len + 4 * sum(bit << i for i, bit in enumerate(reversed(args.hist_len_list_01)))
+                    args.KAN_experts_list_01 = [1 for i in range(args.n_KAN_experts)] 
+
+                # *****************************
+
+                    print(args.var_num)
+                    print(args.indicators_list_01)
+                    print(args.hist_len)
+                    print(args.hist_len_list_01)
+                    print(args.KAN_experts_list_01)
+
+                    trainer, data_module, model, callback = train_init(training_conf, vars(args))
+                    trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+                    total_testing_trading_days = args.data_split[2] - args.hist_len
+
                 total_check += total_testing_trading_days
                 print("\n")
 
@@ -832,7 +892,7 @@ if __name__ == '__main__':
         total_check = 0
         args.model_name = "LSTM"
 
-        for i in range(0, 2):
+        for i in range(0, 1):
         #for i in range(0, max_iteration):
             if total_check>=2520:
                 print(f"End for stock {color.BOLD}{symbol}{color.END}")
@@ -872,8 +932,10 @@ if __name__ == '__main__':
                 print("Optimal choices: ")
                 print(args.var_num)
                 print(args.indicators_list_01)
-                print(args.hist_len)
-                print(args.hist_len_list_01)
+
+                if args.GA_type==2:
+                    print(args.hist_len)
+                    print(args.hist_len_list_01)
                 
                 print("Optimal model: ")
                 args.optimal = 1
@@ -890,7 +952,7 @@ if __name__ == '__main__':
         total_check = 0
         args.model_name = "MLP"
 
-        for i in range(0, 2):
+        for i in range(0, 1):
         #for i in range(0, max_iteration):
             if total_check>=2520:
                 print(f"End for stock {color.BOLD}{symbol}{color.END}")
@@ -930,8 +992,10 @@ if __name__ == '__main__':
                 print("Optimal choices: ")
                 print(args.var_num)
                 print(args.indicators_list_01)
-                print(args.hist_len)
-                print(args.hist_len_list_01)
+
+                if args.GA_type==2:
+                    print(args.hist_len)
+                    print(args.hist_len_list_01)
                 
                 print("Optimal model: ")
                 args.optimal = 1
