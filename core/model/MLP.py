@@ -72,8 +72,9 @@ class RevIN(nn.Module):
 
 
 class MLP(nn.Module):
-    def __init__(self, var_num, drop, revin_affine, indicators_list_01):
+    def __init__(self,pred_len, var_num, drop, revin_affine, indicators_list_01):
         super(MLP, self).__init__()
+        self.pred_len = pred_len
         self.var_num = var_num
         self.drop = drop
         self.indicators_list_01 = indicators_list_01
@@ -94,7 +95,7 @@ class MLP(nn.Module):
         B, L, N = var_x.shape
         var_x = self.rev(var_x, 'norm') if self.rev else var_x
         
-        var_x = var_x.view(B * L, -1)  # Shape: [B * L, input_dim]
+        #var_x = var_x.view(B * L, -1)  # Shape: [B * L, input_dim]
 
         x = F.relu(self.fc1(var_x))
         x = self.dropout(x)
@@ -108,7 +109,7 @@ class MLP(nn.Module):
         x = self.dropout(x)
         x = self.fc6(x)
 
-        x = x.view(B, L, -1)  # Shape: [B, L, 3]
+        #x = x.view(B, L, -1)  # Shape: [B, L, 3]
         final_out = x[:, -1, :]  # Take the last time step for prediction
 
         prediction = self.final_layer(final_out)  # Shape: [B, 1]
