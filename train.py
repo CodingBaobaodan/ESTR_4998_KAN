@@ -792,7 +792,7 @@ if __name__ == '__main__':
     for symbol in ticker_symbols:
         print(f"Start for stock {color.BOLD}{symbol}{color.END}:")
 
-        for model in ["DenseRMoK", "LSTM", "MLP"]:
+        for model in ["MLP", "LSTM", "DenseRMoK"]:
             args.model_name = model
             total_check = 0
 
