@@ -109,10 +109,10 @@ class LTSFRunner(L.LightningModule):
             self.log('test/downside_deviation', evaluation_metrics['downside_deviation'], on_step=False, on_epoch=True, sync_dist=True)
 
         if self.optimal:
-            global daily_return_multiplication_test
-            daily_return_multiplication_test = daily_return_multiplication_test * reduce(lambda x, y: x * (1+y), evaluation_metrics['daily return'])
-                        
-            print(daily_return_multiplication_test)
+            global daily_return_multiplication_test_list 
+            daily_return_multiplication_test_list.append(evaluation_metrics['daily return'])
+
+            print(daily_return_multiplication_test_list)
 
     def on_train_epoch_end(self):
         # Sort accumulated training predictions by their time index
@@ -137,10 +137,10 @@ class LTSFRunner(L.LightningModule):
             self.final_train_metrics = evaluation_metrics
 
         if self.optimal:
-            global daily_return_multiplication_train
-            daily_return_multiplication_train = daily_return_multiplication_train * reduce(lambda x, y: x * (1+y), evaluation_metrics['daily return'])
+            global daily_return_multiplication_train_list 
+            daily_return_multiplication_train_list.append(evaluation_metrics['daily return'])
 
-            print(daily_return_multiplication_train)
+            print(daily_return_multiplication_train_list)
 
 
             # Clear the training accumulator for the next epoch

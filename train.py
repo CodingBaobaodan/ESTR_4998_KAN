@@ -18,6 +18,7 @@ from lightning.pytorch.callbacks import Callback
 from core.data_runner import DataInterface
 from core.ltsf_runner import LTSFRunner
 from core.util import cal_conf_hash
+from functools import reduce
 
 from fredapi import Fred
 import yfinance as yf
@@ -795,8 +796,8 @@ if __name__ == '__main__':
             args.model_name = model
             total_check = 0
             
-            daily_return_multiplication_train = 1
-            daily_return_multiplication_test = 1
+            daily_return_multiplication_train_list = []
+            daily_return_multiplication_test_list = []
 
             #for i in range(0, max_iteration):
             for i in range(0, 1):
@@ -904,9 +905,23 @@ if __name__ == '__main__':
                     total_check += total_testing_trading_days
                     print("\n")
 
+
+            daily_return_multiplication_train = 1
+            for list in daily_return_multiplication_train_list:
+                for item in list:
+                    daily_return_multiplication_train = daily_return_multiplication_train * (1+item)
+            
             daily_return_multiplication_train = daily_return_multiplication_train - 1
+
+
+            daily_return_multiplication_test = 1
+            for list in daily_return_multiplication_test_list:
+                for item in list:
+                    daily_return_multiplication_test = daily_return_multiplication_test * (1+item)
+            
             daily_return_multiplication_test = daily_return_multiplication_test - 1
 
-            print(daily_return_multiplication_train)
-            print(daily_return_multiplication_test)
+            print(daily_return_multiplication_train, daily_return_multiplication_test)
+
+
             # write CSV
