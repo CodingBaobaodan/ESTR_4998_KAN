@@ -924,7 +924,7 @@ if __name__ == '__main__':
             
             daily_return_multiplication_test = daily_return_multiplication_test - 1
 
-            filename = f"{args.save_root}/{args.model_name}/GA{args.GA_type}/{args.dataset_name}.csv"
+            filename = f"{args.save_root}/{args.model_name}/GA{args.GA_type}/{args.dataset_name}_total_return.csv"
             if not os.path.exists(filename):
                 with open(filename, "w") as f:
                     header = ("train_total_return,test_total_return\n")
