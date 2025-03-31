@@ -25,6 +25,9 @@ class LTSFRunner(L.LightningModule):
         self.dataset_name = kargs['dataset_name']
         self.optimal = kargs['optimal']
 
+        self.daily_return_multiplication_train_list = []
+        self.daily_return_multiplication_test_list = []
+
         self.train_losses = []
         self.test_losses = []
 
@@ -108,10 +111,9 @@ class LTSFRunner(L.LightningModule):
             self.log('test/total_profits', evaluation_metrics['total_profits'], on_step=False, on_epoch=True, sync_dist=True)
             self.log('test/downside_deviation', evaluation_metrics['downside_deviation'], on_step=False, on_epoch=True, sync_dist=True)
 
-        global daily_return_multiplication_test_list 
         if self.optimal:
-            daily_return_multiplication_test_list.append(evaluation_metrics['daily return'])
-            print(daily_return_multiplication_test_list)
+            self.daily_return_multiplication_test_list.append(evaluation_metrics['daily return'])
+            
 
     def on_train_epoch_end(self):
         # Sort accumulated training predictions by their time index
@@ -135,14 +137,12 @@ class LTSFRunner(L.LightningModule):
             # Save these metrics for later use by the FinalResultLoggerCallback.
             self.final_train_metrics = evaluation_metrics
 
-        global daily_return_multiplication_train_list 
         if self.optimal:
-            daily_return_multiplication_train_list.append(evaluation_metrics['daily return'])
-            print(daily_return_multiplication_train_list)
+            self.daily_return_multiplication_train_list.append(evaluation_metrics['daily return'])
 
 
-            # Clear the training accumulator for the next epoch
-            del self.train_accum
+        # Clear the training accumulator for the next epoch
+        del self.train_accum
 
         # log the final loss   
         if self.train_losses:

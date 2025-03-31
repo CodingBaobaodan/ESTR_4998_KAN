@@ -726,7 +726,7 @@ def train_init(hyper_conf, conf):
     data_module = DataInterface(**conf)
     model = LTSFRunner(**conf)
 
-    return trainer, data_module, model, callbacks[1]
+    return trainer, data_module, model, callbacks[1], model.daily_return_multiplication_train_list, model.daily_return_multiplication_test_list
 
 def train_func(trainer, data_module, model, callback_testloss):
     trainer.fit(model=model, datamodule=data_module)
@@ -735,7 +735,7 @@ def train_func(trainer, data_module, model, callback_testloss):
     model.train_plot_losses()
     model.test_plot_losses()
 
-    return trainer, data_module, model, callback_testloss.get_last_test_loss()
+    return trainer, data_module, model, callback_testloss.get_last_test_loss(), model.daily_return_multiplication_train_list, model.daily_return_multiplication_test_list
 
 
 if __name__ == '__main__':
@@ -795,10 +795,9 @@ if __name__ == '__main__':
         for model in ["DenseRMoK", "LSTM", "MLP"]:
             args.model_name = model
             total_check = 0
-            global daily_return_multiplication_train_list
-            global daily_return_multiplication_test_list
-            daily_return_multiplication_train_list = []
-            daily_return_multiplication_test_list = []
+
+            args.daily_return_multiplication_train_list = []
+            args.daily_return_multiplication_test_list = []
 
             #for i in range(0, max_iteration):
             for i in range(0, 1):
@@ -874,8 +873,8 @@ if __name__ == '__main__':
                         print("Optimal model: ")
 
                         args.optimal = 1
-                        trainer, data_module, model, callback = train_init(training_conf, vars(args))
-                        trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+                        trainer, data_module, model, callback, daily_return_multiplication_train_list, daily_return_multiplication_test_list = train_init(training_conf, vars(args))
+                        trainer, data_module, model, test_loss, daily_return_multiplication_train_list, daily_return_multiplication_test_list = train_func(trainer, data_module, model, callback)
                         total_testing_trading_days = args.data_split[2] - args.hist_len
 
                     else:
@@ -899,16 +898,19 @@ if __name__ == '__main__':
                         if args.model_name == "DenseRMoK":
                             print(args.KAN_experts_list_01)
 
-                        trainer, data_module, model, callback = train_init(training_conf, vars(args))
-                        trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
+                        trainer, data_module, model, callback, daily_return_multiplication_train_list, daily_return_multiplication_test_list = train_init(training_conf, vars(args))
+                        trainer, data_module, model, test_loss, daily_return_multiplication_train_list, daily_return_multiplication_test_list = train_func(trainer, data_module, model, callback)
                         total_testing_trading_days = args.data_split[2] - args.hist_len
 
                     total_check += total_testing_trading_days
                     print("\n")
 
+                    args.daily_return_multiplication_train_list.append(daily_return_multiplication_train_list)
+                    args.daily_return_multiplication_test_list.append(daily_return_multiplication_test_list)
+
 
             daily_return_multiplication_train = 1
-            for list in daily_return_multiplication_train_list:
+            for list in args.daily_return_multiplication_train_list:
                 for item in list:
                     daily_return_multiplication_train = daily_return_multiplication_train * (1+item)
             
@@ -916,7 +918,7 @@ if __name__ == '__main__':
 
 
             daily_return_multiplication_test = 1
-            for list in daily_return_multiplication_test_list:
+            for list in args.daily_return_multiplication_test_list:
                 for item in list:
                     daily_return_multiplication_test = daily_return_multiplication_test * (1+item)
             
