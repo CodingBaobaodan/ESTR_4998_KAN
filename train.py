@@ -910,6 +910,7 @@ if __name__ == '__main__':
 
 
             daily_return_multiplication_train = 1
+            print(args.daily_return_multiplication_train_list)
             for list in args.daily_return_multiplication_train_list:
                 for item in list:
                     daily_return_multiplication_train = daily_return_multiplication_train * (1+item)
