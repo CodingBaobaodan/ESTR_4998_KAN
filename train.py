@@ -449,10 +449,6 @@ def selection(population, all_fitnesses, pop_size, tournament_size=3):
     tournament_size = min(tournament_size, pop_size)
 
     selected = []
-    print(population)
-    print(all_fitnesses)
-    print(zip(population, all_fitnesses))
-    print(list(zip(population, all_fitnesses)))
 
     for _ in range(pop_size):   
         tournament = random.sample(list(zip(population, all_fitnesses)), tournament_size)
@@ -764,7 +760,7 @@ if __name__ == '__main__':
     parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience") # // Not used
     parser.add_argument("--num_workers", default=1, type=int, help="Number of workers for data loading")
 
-    parser.add_argument("--population_size", default=4, type=int, help="Population Size for GA")
+    parser.add_argument("--population_size", default=64, type=int, help="Population Size for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
@@ -781,8 +777,8 @@ if __name__ == '__main__':
     args.total_generations = math.floor(math.log2(args.population_size))
     args.start_end_string = ""
 
-    #ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
-    ticker_symbols = ['AAPL'] #, 'IBM']
+    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU'] #, 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
+
 
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.data_split[2])

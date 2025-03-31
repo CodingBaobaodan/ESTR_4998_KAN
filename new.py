@@ -1,14 +1,4 @@
-from functools import reduce
 
-a = 2
-
-a = a * reduce(lambda x, y: x * y, [2, 3 ,4 ,5])
-a = a * reduce(lambda x, y: x * y, [2, 3 ,4 ,5])
-print(a)
-
-
-
-'''
 import argparse
 import importlib
 import importlib.util
@@ -55,7 +45,7 @@ class color:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
 
-'''
+
 start_end_string = ""
 def read_data(start_date, end_date):
     global start_end_string
@@ -364,5 +354,3 @@ def read_data(start_date, end_date):
         combined_data.to_csv(f"{output_dir}/data_for_dates.csv", index=True)
 
 read_data("2010-02-17", "2024-12-30")
-'''
-'''
