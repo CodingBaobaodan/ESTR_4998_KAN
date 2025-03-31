@@ -909,16 +909,16 @@ if __name__ == '__main__':
 
 
             daily_return_multiplication_train = 1
-            for list in args.daily_return_multiplication_train_list:
-                for item in list:
+            for train_list in args.daily_return_multiplication_train_list:
+                for item in train_list:
                     daily_return_multiplication_train = daily_return_multiplication_train * (1+item)
             
             daily_return_multiplication_train = daily_return_multiplication_train - 1
 
 
             daily_return_multiplication_test = 1
-            for list in args.daily_return_multiplication_test_list:
-                for item in list:
+            for test_list in args.daily_return_multiplication_test_list:
+                for item in test_list:
                     daily_return_multiplication_test = daily_return_multiplication_test * (1+item)
             
             daily_return_multiplication_test = daily_return_multiplication_test - 1
