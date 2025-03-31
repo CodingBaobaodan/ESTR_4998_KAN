@@ -450,6 +450,11 @@ def selection(population, all_fitnesses, pop_size, tournament_size=3):
 
     selected = []
     for _ in range(pop_size):
+        print(population)
+        print(all_fitnesses)
+        print(zip(population, all_fitnesses))
+        print(list(zip(population, all_fitnesses)))
+        
         tournament = random.sample(list(zip(population, all_fitnesses)), tournament_size)
         winner = max(tournament, key=lambda x: x[1])[0]
         selected.append(winner)
