@@ -453,6 +453,8 @@ def selection(population, all_fitnesses, pop_size, tournament_size=3):
         print(ind.genes['features'])
         print(ind.genes['hyperparameters'])
     print(all_fitnesses)
+    print(zip(population, all_fitnesses))
+    print(list(zip(population, all_fitnesses)))
 
     for _ in range(pop_size):   
         tournament = random.sample(list(zip(population, all_fitnesses)), tournament_size)
