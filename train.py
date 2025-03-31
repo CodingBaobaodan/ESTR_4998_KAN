@@ -672,14 +672,14 @@ def train_init(hyper_conf, conf):
     conf['conf_hash'] = cal_conf_hash(conf, hash_len=10)
 
     L.seed_everything(conf["seed"])
-    save_dir = os.path.join(conf["save_root"], '{}_{}'.format(conf["model_name"], conf["dataset_name"]))
+    save_dir = os.path.join(conf["save_root"], conf["model_name"])
     output_dir = save_dir
     os.makedirs(output_dir, exist_ok=True)
 
     callbacks = [
         TrainLossLoggerCallback(),
         TestLossLoggerCallback(), 
-        FinalResultLoggerCallback(conf['optimal'], filename=os.path.join(save_dir, ".csv"))
+        FinalResultLoggerCallback(conf['optimal'], filename=os.path.join(save_dir, f"{conf["dataset_name"]}.csv"))
     ]
 
     trainer = L.Trainer(
@@ -823,7 +823,6 @@ if __name__ == '__main__':
                 trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
                 total_testing_trading_days = args.data_split[2] - args.hist_len
                 total_check += total_testing_trading_days
-                print(total_check)
                 print("\n")
 
 ########################################################################################################################################
