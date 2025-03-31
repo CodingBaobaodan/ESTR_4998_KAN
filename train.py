@@ -705,7 +705,7 @@ def train_init(hyper_conf, conf):
     conf['conf_hash'] = cal_conf_hash(conf, hash_len=10)
 
     L.seed_everything(conf["seed"])
-    save_dir = f"{conf["save_root"]}/{conf["model_name"]}/GA{conf["GA_type"]}"
+    save_dir = f"{conf['save_root']}/{conf['model_name']}/GA{conf['GA_type']}"
     output_dir = save_dir
     os.makedirs(output_dir, exist_ok=True)
 
