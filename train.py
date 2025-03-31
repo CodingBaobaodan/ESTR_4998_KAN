@@ -564,8 +564,8 @@ def genetic_algorithm(training_conf, conf):
                 child1, child2 = inter_chromosome_crossover(conf, parent1, parent2, conf['total_n_features'], conf['n_hyperparameters'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name'])
 
             if generation != conf['total_generations'] :
-                next_population.append(mutation(conf, child1, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
-                next_population.append(mutation(conf, child2, 0.1, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
+                next_population.append(mutation(conf, child1, 0.05, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
+                next_population.append(mutation(conf, child2, 0.05, conf['total_n_features'], conf['max_hist_len_n_bit'], conf['n_KAN_experts'], conf['model_name']))
 
 
         # Replace the old population with the new one, preserving the best individual
