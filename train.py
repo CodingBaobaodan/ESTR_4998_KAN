@@ -595,12 +595,12 @@ class FinalResultLoggerCallback(Callback):
         if self.optimal:
             if not os.path.exists(self.filename):
                 with open(self.filename, "w") as f:
-                    header = ("train_daily_returns_list,"
+                    header = ("train_length,"
                             "train_average_daily_return,train_cumulative_return,"
                             "train_downside_deviation,"
                             "train_total_profits,train_loss_days,"
                             "final_train_loss,"
-                            "test_daily_returns_list,"
+                            "test_length,"
                             "test_average_daily_return,test_cumulative_return,"
                             "test_downside_deviation,"
                             "test_total_profits,test_loss_days,"
