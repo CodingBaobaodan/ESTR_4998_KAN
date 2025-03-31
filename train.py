@@ -358,7 +358,7 @@ def read_data(start_date, end_date):
         combined_data.to_csv(f"{output_dir}/all_data.csv", index=True)
 
 class Chromosome:
-    def __init__(self, conf, features, hyperparameters):
+    def __init__(self, features, hyperparameters):
 
         self.genes = {
             'features': features,
@@ -372,14 +372,8 @@ def decode(ind, conf):
     var_num = sum(indicators_list_01)
     
     if conf['GA_type']==1:
-        if conf['model_name'] == "DenseRMoK":
-            hist_len_list_01, KAN_experts_list_01 = conf['hist_len_list_01'], conf['KAN_experts_list_01']
-            hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
-
-        else:
-            hist_len_list_01 = conf['hist_len_list_01']
-            hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
-            KAN_experts_list_01 = conf['KAN_experts_list_01']
+        hist_len_list_01, KAN_experts_list_01 = conf['hist_len_list_01'], conf['KAN_experts_list_01']
+        hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
     
     else:
         if conf['model_name'] == "DenseRMoK":
@@ -389,7 +383,7 @@ def decode(ind, conf):
         else:
             hist_len_list_01 = ind.genes['hyperparameters'][:conf['max_hist_len_n_bit']]
             hist_len = conf['min_hist_len'] + 4 * sum(bit << i for i, bit in enumerate(reversed(hist_len_list_01)))
-            KAN_experts_list_01 = 0
+            KAN_experts_list_01 = conf['KAN_experts_list_01']
 
     return var_num, indicators_list_01, hist_len, hist_len_list_01, KAN_experts_list_01
 
@@ -446,7 +440,7 @@ def create_initial_population(conf):
             else:
                 hyperparameters = hist_len_list_01
 
-        population.append(Chromosome(conf, features, hyperparameters))
+        population.append(Chromosome(features, hyperparameters))
 
     return population
 
@@ -474,27 +468,26 @@ def inter_chromosome_crossover(conf, ch1, ch2, n_features, n_hyperparameters, ma
     crossover_point2 = random.randint(0, n_hyperparameters - 1)
     
     features1[crossover_point1:], features2[crossover_point1:] = features2[crossover_point1:], features1[crossover_point1:]
-    if conf['GA_type']==2:
+    if (conf['GA_type']==2) and (conf['model_name']=="DenseRMoK"):
         hyperparameters1[crossover_point2:], hyperparameters2[crossover_point2:] = hyperparameters2[crossover_point2:], hyperparameters1[crossover_point2:]
     
     ch1.genes['features'] = features1
     ch2.genes['features'] = features2
 
-    if conf['GA_type']==2:
+    ch1.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
+    ch2.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
+
+    if (conf['GA_type']==2) and (conf['model_name']=="DenseRMoK"):
         ch1.genes['hyperparameters'] = hyperparameters1
         ch2.genes['hyperparameters'] = hyperparameters2
 
-        if model_name == "DenseRMoK":
-            ch1.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
-            ch2.genes['features'][n_features-14:n_features-14+5] = [1, 1, 1, 1, 1] 
+        if sum(ch1.genes['hyperparameters'][max_hist_len_n_bit:])==0:
+            index_to_set = random.randint(0, n_KAN_experts - 1)
+            ch1.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
-            if sum(ch1.genes['hyperparameters'][max_hist_len_n_bit:])==0:
-                index_to_set = random.randint(0, n_KAN_experts - 1)
-                ch1.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
-
-            if sum(ch2.genes['hyperparameters'][max_hist_len_n_bit:])==0:
-                index_to_set = random.randint(0, n_KAN_experts - 1)
-                ch2.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
+        if sum(ch2.genes['hyperparameters'][max_hist_len_n_bit:])==0:
+            index_to_set = random.randint(0, n_KAN_experts - 1)
+            ch2.genes['hyperparameters'][max_hist_len_n_bit:] = [1 if i == index_to_set else 0 for i in range(n_KAN_experts)]
 
     return ch1, ch2
 
@@ -783,8 +776,8 @@ if __name__ == '__main__':
     args.total_generations = math.floor(math.log2(args.population_size))
     args.start_end_string = ""
 
-    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
-    #ticker_symbols = ['AAPL', 'IBM']
+    #ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
+    ticker_symbols = ['AAPL', 'IBM']
 
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.data_split[2])
@@ -802,7 +795,6 @@ if __name__ == '__main__':
             #for i in range(0, max_iteration):
             for i in range(0, 1):
                 if total_check>=2520:
-                    print(f"End for stock {color.BOLD}{symbol}{color.END}")
                     break
                 else:
 
@@ -933,3 +925,5 @@ if __name__ == '__main__':
             line = f"{daily_return_multiplication_train}, {daily_return_multiplication_test}\n"
             with open(filename, "a") as f:
                 f.write(line)
+
+        print(f"End for stock {color.BOLD}{symbol}{color.END}")
