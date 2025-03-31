@@ -763,7 +763,7 @@ if __name__ == '__main__':
         args.model_name = "DenseRMoK"
 
         for i in range(0, max_iteration):
-            if total_check>=2510:
+            if total_check>=2520:
                 print(f"End for stock {color.BOLD}{symbol}{color.END}")
                 break
             else:
@@ -821,7 +821,7 @@ if __name__ == '__main__':
         args.model_name = "LSTM"
 
         for i in range(0, max_iteration):
-            if total_check>=2510:
+            if total_check>=2520:
                 print(f"End for stock {color.BOLD}{symbol}{color.END}")
                 break
             else:
