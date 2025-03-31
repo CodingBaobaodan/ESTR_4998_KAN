@@ -534,6 +534,9 @@ def genetic_algorithm(training_conf, conf):
         table_each_generation = PrettyTable()
         
         table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
+        for index, element in list(enumerate(list_ind)):
+            print(element.genes['features'])
+            print(element.genes['hyperparameters'])
         table_each_generation.add_rows([index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] for index, element in list(enumerate(list_ind)))
         table_each_generation.title = f"Generation {generation}: {conf['start_end_string']} for stock {conf['dataset_name']} with model {conf['model_name']} and GA {str(conf['GA_type'])}"
 
@@ -923,9 +926,6 @@ if __name__ == '__main__':
                     daily_return_multiplication_test = daily_return_multiplication_test * (1+item)
             
             daily_return_multiplication_test = daily_return_multiplication_test - 1
-
-            print(daily_return_multiplication_train, daily_return_multiplication_test)
-
 
             filename = f"{args.save_root}/{args.model_name}/GA{args.GA_type}/{args.dataset_name}.csv"
             if not os.path.exists(filename):

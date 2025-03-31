@@ -1,12 +1,7 @@
-daily_return_multiplication_train_list = []
-
-def func(optimal, list_metrics):
+table_each_generation.field_names = ["Chromosome ID", "Features", "Hyperparameters", "Fitness"]
+table_each_generation.add_rows(
     
     
-    if optimal:
-        global daily_return_multiplication_train_list
-        daily_return_multiplication_train_list.append(list_metrics)
-        print(daily_return_multiplication_train_list)
-
-# Example call to func
-func(True, [1, 2, 3])
+[index+1, ''.join(str(bit) for bit in element.genes['features']), ''.join(str(bit) for bit in element.genes['hyperparameters']), element.fitness] 
+for index, element in list(enumerate(list_ind))
+)
