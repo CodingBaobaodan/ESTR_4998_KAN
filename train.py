@@ -765,7 +765,7 @@ if __name__ == '__main__':
     parser.add_argument("--es_patience", default=10, type=int, help="Early stopping patience") # // Not used
     parser.add_argument("--num_workers", default=1, type=int, help="Number of workers for data loading")
 
-    parser.add_argument("--population_size", default=4, type=int, help="Population Size for GA")
+    parser.add_argument("--population_size", default=64, type=int, help="Population Size for GA")
     parser.add_argument("--total_n_features", default=50, type=int, help="Total number of features for GA") 
     parser.add_argument("--min_hist_len", default=4, type=int, help="Minimum window size allowed")
     parser.add_argument("--max_hist_len", default=64, type=int, help="Maximum window size allowed")
@@ -782,8 +782,8 @@ if __name__ == '__main__':
     args.total_generations = math.floor(math.log2(args.population_size))
     args.start_end_string = ""
 
-    #ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
-    ticker_symbols = ['AAPL', 'IBM']
+    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
+    #ticker_symbols = ['AAPL', 'IBM']
 
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.data_split[2])
@@ -795,8 +795,7 @@ if __name__ == '__main__':
             args.model_name = model
             total_check = 0
 
-            for i in range(0, 1):
-            #for i in range(0, max_iteration):
+            for i in range(0, max_iteration):
                 if total_check>=2520:
                     print(f"End for stock {color.BOLD}{symbol}{color.END}")
                     break
@@ -900,70 +899,3 @@ if __name__ == '__main__':
 
                     total_check += total_testing_trading_days
                     print("\n")
-
-'''
-        total_check = 0
-        args.model_name = "MLP"
-
-        for i in range(0, 1):
-        #for i in range(0, max_iteration):
-            if total_check>=2520:
-                print(f"End for stock {color.BOLD}{symbol}{color.END}")
-                break
-            else:
-
-                start_index, end_index = (0, sum(args.data_split)) if i == 0 else (start_index + args.data_split[2], end_index + args.data_split[2])
-                start_date, end_date = all_df.loc[start_index, "Date"],  all_df.loc[end_index, "Date"]
-
-                print(f"From {color.BOLD}{start_date}{color.END} To {color.BOLD}{end_date}{color.END}:")
-                read_data(start_date, end_date)
-
-                args.dataset_name = symbol
-
-                start_end_string = f"{start_date}_{end_date}"
-                args.start_end_string = start_end_string
-                df = pd.read_csv(f"{start_end_string}/dataset/{symbol}/all_data.csv")
-                args.var_num = df.shape[1] - 1 # Exclude the dates column
-
-                args.indicators_list_01 = [1 for i in range(args.total_n_features)] 
-
-                args.hist_len = 4
-                args.hist_len_list_01 = [1 for i in range(args.max_hist_len_n_bit)]
-
-                training_conf = {
-                    "seed": int(args.seed),
-                    "data_root": f"dataset/{symbol}",
-                    "save_root": args.save_root,
-                    "devices": args.devices,
-                    "use_wandb": args.use_wandb
-                }
-                
-                print(f"{color.BOLD}{args.model_name} is built: {color.END}")
-                args.optimal = 0
-                args.var_num, args.indicators_list_01, args.hist_len, args.hist_len_list_01, _ = genetic_algorithm(training_conf, vars(args))
-
-                print("Optimal choices: ")
-                print(args.var_num)
-                print(args.indicators_list_01)
-
-                if args.GA_type==2:
-                    print(args.hist_len)
-                    print(args.hist_len_list_01)
-                
-                print("Optimal model: ")
-                args.optimal = 1
-                trainer, data_module, model, callback = train_init(training_conf, vars(args))
-                trainer, data_module, model, test_loss = train_func(trainer, data_module, model, callback)
-                total_testing_trading_days = args.data_split[2] - args.hist_len
-                total_check += total_testing_trading_days
-                print("\n")
-
-        print("-----------------------------------------------------------")
-        print("-----------------------------------------------------------")
-        print("\n")
-            
-        
-        print(f"End for stock {color.BOLD}{symbol}{color.END}")
-
-'''             
-
