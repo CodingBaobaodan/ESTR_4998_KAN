@@ -793,8 +793,7 @@ if __name__ == '__main__':
             args.daily_return_multiplication_train_list = []
             args.daily_return_multiplication_test_list = []
 
-            #for i in range(0, max_iteration):
-            for i in range(0, 2):
+            for i in range(0, max_iteration):
                 if total_check>=2520:
                     break
                 else:
