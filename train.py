@@ -778,11 +778,11 @@ if __name__ == '__main__':
     args.start_end_string = ""
 
     ticker_symbols = ['AMD'] #, 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU'] #, 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
-
+    ticker_symbols = ['AAPL', 'MSFT', 'ORCL', 'AMD', 'CSCO', 'ADBE', 'IBM', 'TXN', 'AMAT', 'MU', 'ADI', 'INTC', 'LRCX', 'KLAC', 'MSI', 'GLW', 'HPQ', 'TYL', 'PTC', 'JNJ']
 
     all_df = pd.read_csv("dataset/data_for_dates.csv")
     max_iteration = math.floor(3242 // args.data_split[2])
-
+    max_iteration = 1
     for symbol in ticker_symbols:
         print(f"Start for stock {color.BOLD}{symbol}{color.END}:")
 
